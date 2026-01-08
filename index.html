@@ -281,8 +281,8 @@
             btns.forEach(b => b.disabled = true);
 
             try {
-                // NG-ROK URL: https://portably-inadvertent-hermine.ngrok-free.dev
-                const WEBHOOK_URL = 'https://portably-inadvertent-hermine.ngrok-free.dev/webhook-test/execute-workflow';
+                // NG-ROK PRODUCTION URL: Workflow'u "Activate" ettikten sonra bu link çalışır.
+                const WEBHOOK_URL = 'https://portably-inadvertent-hermine.ngrok-free.dev/webhook/execute-workflow';
 
                 const response = await fetch(WEBHOOK_URL, {
                     method: 'POST',
@@ -313,3 +313,5 @@
         setInterval(fetchPrices, 10000); // Update every 10s
     </script>
 </body>
+
+</html>
