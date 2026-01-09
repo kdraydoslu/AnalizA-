@@ -153,7 +153,7 @@
 
         .button-group {
             display: grid;
-            grid-template-columns: 1fr;
+            grid-template-columns: 1fr 1fr;
             gap: 12px;
             margin-top: 20px;
         }
@@ -347,20 +347,26 @@
         <div class="button-group">
             <button class="btn" onclick="executeWebhook('BTC')"><i class="fa-solid fa-bolt"></i> Analyze BTC</button>
             <button class="btn" onclick="executeWebhook('ETH')"><i class="fa-solid fa-bolt"></i> Analyze ETH</button>
-            <button class="btn" onclick="executeWebhook('BIST100')"><i class="fa-solid fa-chart-line"></i> Analyze
+            <button class="btn" onclick="executeWebhook('BIST100')"><i class="fa-solid fa-chart-line"></i>
                 BIST100</button>
+            <button class="btn" onclick="executeWebhook('NASDAQ')"><i class="fa-solid fa-arrow-trend-up"></i>
+                NASDAQ</button>
+            <button class="btn" onclick="executeWebhook('DOW')"><i class="fa-solid fa-landmark"></i> Dow Jones</button>
+            <button class="btn" onclick="executeWebhook('SP500')"><i class="fa-solid fa-layer-group"></i> S&P
+                500</button>
         </div>
     </div>
 
     <!-- NEWS PAGE -->
     <div id="news-page" class="page">
         <div class="header">
-            <h1>AI News Feed</h1>
+            <h1>Financial News</h1>
         </div>
 
+        <!-- Crypto News -->
         <div class="label" style="margin-bottom: 12px; border-left: 3px solid var(--accent-color); padding-left: 8px;">
-            Son Haberler</div>
-        <div id="news-container">
+            Kripto Haberleri</div>
+        <div id="crypto-news-container">
             <div class="news-card">
                 <span class="news-tag">BULLISH</span>
                 <div class="news-title">BlackRock's BTC ETF Sees Record Inflows as Market Rallies</div>
@@ -376,6 +382,51 @@
                 <div class="news-meta">
                     <span><i class="fa-regular fa-clock"></i> 2h ago</span>
                     <span>AI Score: 45/100</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- US Stocks News -->
+        <div class="label" style="margin: 24px 0 12px; border-left: 3px solid #60a5fa; padding-left: 8px;">ABD Borsa
+            Haberleri</div>
+        <div id="us-news-container">
+            <div class="news-card">
+                <span class="news-tag" style="background: rgba(96, 165, 250, 0.2); color: #60a5fa;">TECH</span>
+                <div class="news-title">Nvidia Hits New High as AI Chip Demand Continues to Surge</div>
+                <div class="news-meta">
+                    <span><i class="fa-regular fa-clock"></i> 1h ago</span>
+                    <span>NASDAQ: NVDA</span>
+                </div>
+            </div>
+            <div class="news-card">
+                <span class="news-tag"
+                    style="background: rgba(248, 113, 113, 0.2); color: var(--danger-color);">MACRO</span>
+                <div class="news-title">Fed Officials Signal Higher-for-Longer Interest Rates</div>
+                <div class="news-meta">
+                    <span><i class="fa-regular fa-clock"></i> 3h ago</span>
+                    <span>S&P 500 Impact</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- BIST100 News -->
+        <div class="label" style="margin: 24px 0 12px; border-left: 3px solid #34d399; padding-left: 8px;">BIST100
+            Haberleri</div>
+        <div id="bist-news-container">
+            <div class="news-card">
+                <span class="news-tag" style="background: rgba(52, 211, 153, 0.2); color: #34d399;">KAP</span>
+                <div class="news-title">THY (THYAO) Yeni Uçak Alımı Görüşmelerine Başladı</div>
+                <div class="news-meta">
+                    <span><i class="fa-regular fa-clock"></i> 30m ago</span>
+                    <span>BORSAYI ETKİLER</span>
+                </div>
+            </div>
+            <div class="news-card">
+                <span class="news-tag" style="background: rgba(52, 211, 153, 0.2); color: #34d399;">BANKA</span>
+                <div class="news-title">Akbank (AKBNK) Yıllık Kar Beklentisini Yukarı Yönlü Revize Etti</div>
+                <div class="news-meta">
+                    <span><i class="fa-regular fa-clock"></i> 4h ago</span>
+                    <span>TEMETTÜ BEKLENTİSİ</span>
                 </div>
             </div>
         </div>
