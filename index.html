@@ -281,8 +281,8 @@
             btns.forEach(b => b.disabled = true);
 
             try {
-                // NG-ROK PRODUCTION URL: Workflow'u "Activate" ettikten sonra bu link çalışır.
-                const WEBHOOK_URL = 'https://portably-inadvertent-hermine.ngrok-free.dev/webhook/execute-workflow';
+                // NG-ROK TEST URL: n8n'de "Listen for Test Event" yaparken bu link kullanılır.
+                const WEBHOOK_URL = 'https://portably-inadvertent-hermine.ngrok-free.dev/webhook-test/execute-workflow';
 
                 const response = await fetch(WEBHOOK_URL, {
                     method: 'POST',
