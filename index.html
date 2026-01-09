@@ -131,7 +131,7 @@
             background: linear-gradient(135deg, #38bdf8 0%, #2563eb 100%);
             color: white;
             border: none;
-            padding: 16px;
+            padding: 14px 10px;
             border-radius: 14px;
             font-weight: 600;
             font-size: 16px;
@@ -142,6 +142,9 @@
             justify-content: center;
             gap: 10px;
             transition: opacity 0.2s;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .btn:active {
@@ -153,13 +156,6 @@
             grid-template-columns: 1fr;
             gap: 12px;
             margin-top: 20px;
-        }
-
-        .btn {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            padding: 14px 10px;
         }
 
         /* News Styles */
@@ -276,10 +272,13 @@
 <body>
     <!-- MARKET PAGE -->
     <div id="market-page" class="page active">
-        <div class="header">
+        <div class="header" style="margin-bottom: 16px;">
             <h1>Market Dashboard</h1>
         </div>
 
+        <!-- Crypto Section -->
+        <div class="label" style="margin-bottom: 12px; border-left: 3px solid var(--accent-color); padding-left: 8px;">
+            Kripto Varlıklar</div>
         <div class="grid">
             <div class="card">
                 <span class="label">BTC / USDT</span>
@@ -291,35 +290,65 @@
                 <span class="price" id="eth-price">Wait...</span>
                 <span class="change up" id="eth-change">+0.00%</span>
             </div>
-            <div class="card">
-                <span class="label">TOTAL 1 (M.Cap)</span>
-                <span class="price" id="total1-val">$2.4T</span>
-                <div class="status-badge">Global</div>
-            </div>
+        </div>
+
+        <!-- Market Cap & Dominance Section -->
+        <div class="label" style="margin: 20px 0 12px; border-left: 3px solid #818cf8; padding-left: 8px;">Dominans &
+            Market Cap</div>
+        <div class="grid">
             <div class="card">
                 <span class="label">BTC.D</span>
                 <span class="price" id="btcd-val">52.4%</span>
-                <div class="status-badge">Dominance</div>
+            </div>
+            <div class="card">
+                <span class="label">OTHERS.D</span>
+                <span class="price" id="othersd-val">12.1%</span>
+            </div>
+            <div class="card">
+                <span class="label">TOTAL 1</span>
+                <span class="price" id="total1-val">$2.4T</span>
+            </div>
+            <div class="card">
+                <span class="label">TOTAL 2</span>
+                <span class="price" id="total2-val">$1.1T</span>
             </div>
             <div class="card card-full">
-                <div style="display: flex; justify-content: space-between;">
-                    <div>
-                        <span class="label">TOTAL 2</span>
-                        <span class="price" id="total2-val" style="font-size: 16px;">$1.1T</span>
-                    </div>
-                    <div style="text-align: right;">
-                        <span class="label">TOTAL 3</span>
-                        <span class="price" id="total3-val" style="font-size: 16px;">$640B</span>
-                    </div>
-                </div>
+                <span class="label">TOTAL 3 (Exclude BTC/ETH)</span>
+                <span class="price" id="total3-val">$640B</span>
+            </div>
+        </div>
+
+        <!-- Global Indices Section -->
+        <div class="label" style="margin: 20px 0 12px; border-left: 3px solid #10b981; padding-left: 8px;">Küresel
+            Endeksler</div>
+        <div class="grid">
+            <div class="card">
+                <span class="label">BIST 100</span>
+                <span class="price" id="bist-val">9,120</span>
+                <span class="change up">+1.2%</span>
+            </div>
+            <div class="card">
+                <span class="label">NASDAQ</span>
+                <span class="price" id="nasdaq-val">16,240</span>
+                <span class="change up">+0.8%</span>
+            </div>
+            <div class="card">
+                <span class="label">DOW JONES</span>
+                <span class="price" id="dow-val">39,120</span>
+                <span class="change down">-0.2%</span>
+            </div>
+            <div class="card">
+                <span class="label">S&P 500</span>
+                <span class="price" id="sp500-val">5,210</span>
+                <span class="change up">+0.5%</span>
             </div>
         </div>
 
         <div class="button-group">
             <button class="btn" onclick="executeWebhook('BTC')"><i class="fa-solid fa-bolt"></i> Analyze BTC</button>
             <button class="btn" onclick="executeWebhook('ETH')"><i class="fa-solid fa-bolt"></i> Analyze ETH</button>
-            <button class="btn" onclick="executeWebhook('BIST100')"></button><i class="fa-solid fa-chart-line"></i>
-            Analyze BIST100</button>
+            <button class="btn" onclick="executeWebhook('BIST100')"><i class="fa-solid fa-chart-line"></i> Analyze
+                BIST100</button>
         </div>
     </div>
 
@@ -498,6 +527,26 @@
             });
         }
 
+        // Global Indices Mock Data
+        function updateIndices() {
+            const indices = [
+                { id: 'othersd-val', base: 12.1, suffix: '%' },
+                { id: 'bist-val', base: 9120, suffix: '' },
+                { id: 'nasdaq-val', base: 16240, suffix: '' },
+                { id: 'dow-val', base: 39120, suffix: '' },
+                { id: 'sp500-val', base: 5210, suffix: '' }
+            ];
+
+            indices.forEach(idx => {
+                const el = document.getElementById(idx.id);
+                if (el) {
+                    const change = (Math.random() * 2 - 1) * 5; // Small random movement
+                    const newVal = (idx.base + change).toLocaleString(undefined, { maximumFractionDigits: idx.suffix === '%' ? 2 : 0 });
+                    el.innerText = `${newVal}${idx.suffix}`;
+                }
+            });
+        }
+
         // Price Fetching
         async function fetchPrices() {
             try {
@@ -508,6 +557,19 @@
 
                 document.getElementById('btc-price').innerText = `$${parseFloat(btc.lastPrice).toLocaleString()}`;
                 document.getElementById('eth-price').innerText = `$${parseFloat(eth.lastPrice).toLocaleString()}`;
+
+                // Update percentage changes
+                const btcChange = document.getElementById('btc-change');
+                const btcPercent = parseFloat(btc.priceChangePercent);
+                btcChange.innerText = (btcPercent >= 0 ? '+' : '') + btcPercent.toFixed(2) + '%';
+                btcChange.className = 'change ' + (btcPercent >= 0 ? 'up' : 'down');
+
+                const ethChange = document.getElementById('eth-change');
+                const ethPercent = parseFloat(eth.priceChangePercent);
+                ethChange.innerText = (ethPercent >= 0 ? '+' : '') + ethPercent.toFixed(2) + '%';
+                ethChange.className = 'change ' + (ethPercent >= 0 ? 'up' : 'down');
+
+                updateIndices(); // Update indices whenever crypto prices update
             } catch (e) { console.error(e); }
         }
 
