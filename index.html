@@ -266,6 +266,158 @@
             align-self: flex-start;
             margin-top: 8px;
         }
+
+        /* Calendar Styles */
+        .calendar-item {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .cal-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .cal-name {
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .cal-time {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        .cal-values {
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .cal-actual {
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .cal-forecast {
+            font-size: 11px;
+            color: #64748b;
+        }
+
+        .impact-high {
+            color: var(--danger-color);
+        }
+
+        .impact-medium {
+            color: #f59e0b;
+        }
+
+        .impact-low {
+            color: var(--success-color);
+        }
+
+        /* Funds Styles */
+        .fund-card {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .fund-detail-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--bg-color);
+            z-index: 2000;
+            padding: 20px;
+            display: none;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+            }
+
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        .detail-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .back-btn {
+            font-size: 20px;
+            color: var(--accent-color);
+            cursor: pointer;
+        }
+
+        .detail-section {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .detail-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--accent-color);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .detail-label {
+            color: #94a3b8;
+        }
+
+        .detail-value {
+            font-weight: 600;
+        }
+
+        .score-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .score-fill {
+            height: 100%;
+            background: linear-gradient(to right, var(--accent-color), var(--success-color));
+        }
     </style>
 </head>
 
@@ -499,6 +651,172 @@
         </div>
     </div>
 
+    <!-- CALENDAR PAGE -->
+    <div id="calendar-page" class="page">
+        <div class="header">
+            <h1>Ekonomik Takvim</h1>
+        </div>
+        <div id="calendar-container">
+            <div class="calendar-item">
+                <div class="cal-info">
+                    <span class="cal-name">ABD Tüketici Fiyat Endeksi (TÜFE)</span>
+                    <span class="cal-time"><i class="fa-regular fa-clock"></i> Bugün 15:30</span>
+                    <span class="impact-high"><i class="fa-solid fa-fire"></i> Yüksek Etki</span>
+                </div>
+                <div class="cal-values">
+                    <span class="cal-actual">3.1%</span>
+                    <span class="cal-forecast">Beklenen: 2.9%</span>
+                </div>
+            </div>
+            <div class="calendar-item">
+                <div class="cal-info">
+                    <span class="cal-name">Tarım Dışı İstihdam</span>
+                    <span class="cal-time"><i class="fa-regular fa-clock"></i> Cuma 15:30</span>
+                    <span class="impact-high"><i class="fa-solid fa-fire"></i> Yüksek Etki</span>
+                </div>
+                <div class="cal-values">
+                    <span class="cal-actual">216K</span>
+                    <span class="cal-forecast">Beklenen: 170K</span>
+                </div>
+            </div>
+            <div class="calendar-item">
+                <div class="cal-info">
+                    <span class="cal-name">İşsizlik Haklarından Yararlanma Başvuruları (ICSA)</span>
+                    <span class="cal-time"><i class="fa-regular fa-clock"></i> Perşembe 15:30</span>
+                    <span class="impact-medium"><i class="fa-solid fa-bolt"></i> Orta Etki</span>
+                </div>
+                <div class="cal-values">
+                    <span class="cal-actual">210K</span>
+                    <span class="cal-forecast">Beklenen: 215K</span>
+                </div>
+            </div>
+            <div class="calendar-item">
+                <div class="cal-info">
+                    <span class="cal-name">Çekirdek PCE Fiyat Endeksi</span>
+                    <span class="cal-time"><i class="fa-regular fa-clock"></i> 26 Jan 15:30</span>
+                    <span class="impact-high"><i class="fa-solid fa-fire"></i> Yüksek Etki</span>
+                </div>
+                <div class="cal-values">
+                    <span class="cal-actual">0.2%</span>
+                    <span class="cal-forecast">Beklenen: 0.2%</span>
+                </div>
+            </div>
+            <div class="calendar-item">
+                <div class="cal-info">
+                    <span class="cal-name">GSYH (GDP) Çeyreklik</span>
+                    <span class="cal-time"><i class="fa-regular fa-clock"></i> 25 Jan 15:30</span>
+                    <span class="impact-high"><i class="fa-solid fa-fire"></i> Yüksek Etki</span>
+                </div>
+                <div class="cal-values">
+                    <span class="cal-actual">3.3%</span>
+                    <span class="cal-forecast">Beklenen: 2.0%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FUNDS PAGE -->
+    <div id="funds-page" class="page">
+        <div class="header">
+            <h1>TEFAS Fon Analizi</h1>
+        </div>
+        <div id="funds-container">
+            <div class="fund-card" onclick="openFundDetail('TI1')">
+                <div class="cal-info">
+                    <span class="cal-name">TI1 - İş Portföy İhracatçı Şirketler</span>
+                    <span class="news-tag">Hisse Senedi Fonu</span>
+                </div>
+                <div class="cal-values">
+                    <span class="cal-actual">₺4.12</span>
+                    <span class="change up">+2.45%</span>
+                </div>
+            </div>
+            <div class="fund-card" onclick="openFundDetail('IIH')">
+                <div class="cal-info">
+                    <span class="cal-name">IIH - İstanbul Portföy Üçüncü Hisse</span>
+                    <span class="news-tag">Hisse Senedi Fonu</span>
+                </div>
+                <div class="cal-values">
+                    <span class="cal-actual">₺12.45</span>
+                    <span class="change up">+1.82%</span>
+                </div>
+            </div>
+            <div class="fund-card" onclick="openFundDetail('GMR')">
+                <div class="cal-info">
+                    <span class="cal-name">GMR - İhlas Portföy Hisse Senedi </span>
+                    <span class="news-tag">Hisse Senedi Fonu</span>
+                </div>
+                <div class="cal-values">
+                    <span class="cal-actual">₺2.85</span>
+                    <span class="change down">-0.45%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FUND DETAIL VIEW -->
+    <div id="fund-detail-view" class="fund-detail-overlay">
+        <div class="detail-header">
+            <i class="fa-solid fa-arrow-left back-btn" onclick="closeFundDetail()"></i>
+            <h2 id="detail-fund-name">Fon Detayı</h2>
+        </div>
+
+        <div class="detail-section">
+            <div class="detail-title">Fon Özellikleri</div>
+            <p id="detail-fund-desc" style="font-size: 13px; line-height: 1.6; color: #cbd5e1; margin-bottom: 12px;">
+                Yatırım stratejisi kapsamında döviz geliri elde eden ihracatçı şirketlerin hisselerine yatırım yapar.
+            </p>
+            <div class="detail-row">
+                <span class="detail-label">Risk Değeri</span>
+                <span class="detail-value" id="detail-risk-level" style="color: var(--danger-color);">6 / 7</span>
+            </div>
+        </div>
+
+        <div class="detail-section">
+            <div class="detail-title">Karlılık & Büyüme</div>
+            <div class="detail-row">
+                <span class="detail-label">Son 1 Ay</span>
+                <span class="detail-value up">+8.5%</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Son 1 Yıl</span>
+                <span class="detail-value up">+142.3%</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Yatırımcı Sayısı</span>
+                <span class="detail-value">42,150 (+12%)</span>
+            </div>
+        </div>
+
+        <div class="detail-section">
+            <div class="detail-title">Finansal Sağlık & Risk</div>
+            <div class="detail-row">
+                <span class="detail-label">Nakit Kalitesi</span>
+                <span class="detail-value">Yüksek</span>
+            </div>
+            <div class="score-bar">
+                <div class="score-fill" style="width: 85%;"></div>
+            </div>
+
+            <div class="detail-row" style="margin-top: 16px;">
+                <span class="detail-label">Sharpe Oranı</span>
+                <span class="detail-value">2.45</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Standart Sapma</span>
+                <span class="detail-value">12.1%</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Temettü Verimi</span>
+                <span class="detail-value">%2.1 (Yıllık)</span>
+            </div>
+        </div>
+
+        <button class="btn" onclick="executeWebhook('FUND_ANALYSIS')">
+            <i class="fa-solid fa-robot"></i> Yapay Zeka Analizi İste
+        </button>
+    </div>
+
     <!-- BOTTOM NAVIGATION -->
     <nav class="bottom-nav">
         <a href="#" class="nav-item active" onclick="switchPage('market-page', this)">
@@ -508,6 +826,14 @@
         <a href="#" class="nav-item" onclick="switchPage('news-page', this)">
             <i class="fa-solid fa-newspaper"></i>
             <span>News</span>
+        </a>
+        <a href="#" class="nav-item" onclick="switchPage('calendar-page', this)">
+            <i class="fa-solid fa-calendar-days"></i>
+            <span>Calendar</span>
+        </a>
+        <a href="#" class="nav-item" onclick="switchPage('funds-page', this)">
+            <i class="fa-solid fa-sack-dollar"></i>
+            <span>Funds</span>
         </a>
         <a href="#" class="nav-item" onclick="switchPage('settings-page', this)">
             <i class="fa-solid fa-gear"></i>
@@ -622,6 +948,32 @@
 
                 updateIndices(); // Update indices whenever crypto prices update
             } catch (e) { console.error(e); }
+        }
+
+        // Fund Detail Logic
+        function openFundDetail(fundId) {
+            const overlay = document.getElementById('fund-detail-view');
+            const nameEl = document.getElementById('detail-fund-name');
+            const descEl = document.getElementById('detail-fund-desc');
+
+            const fundData = {
+                'TI1': { name: 'TI1 - İş Portföy İhracatçı Şirketler', desc: 'Fon toplam değerinin en az %80’i devamlı olarak ihraççı şirketlerin hisse senetlerine yatırılır.' },
+                'IIH': { name: 'IIH - İstanbul Portföy Üçüncü Hisse', desc: 'BIST üzerinde işlem gören yüksek büyüme potansiyeline sahip şirketlere odaklanır.' },
+                'GMR': { name: 'GMR - İhlas Portföy Hisse Senedi', desc: 'Genel piyasa getirisinin üzerinde getiri hedefleyen aktif yönetimli hisse senedi fonu.' }
+            };
+
+            const data = fundData[fundId];
+            if (data) {
+                nameEl.innerText = data.name;
+                descEl.innerText = data.desc;
+            }
+
+            overlay.style.display = 'block';
+            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+        }
+
+        function closeFundDetail() {
+            document.getElementById('fund-detail-view').style.display = 'none';
         }
 
         fetchPrices();
