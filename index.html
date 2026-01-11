@@ -956,14 +956,28 @@
         }
 
         // Initial stagger for first page load
-        window.addEventListener('load', () => {
-            const activePage = document.querySelector('.page.active');
-            const items = activePage.querySelectorAll('.card, .news-card, .calendar-item, .fund-card, .label, .btn');
-            items.forEach((item, index) => {
-                item.style.animationDelay = `${index * 0.05}s`;
-                item.classList.add('stagger-item');
-            });
-        });
+        function initAnimations() {
+            try {
+                const activePage = document.querySelector('.page.active');
+                if (!activePage) return;
+                const items = activePage.querySelectorAll('.card, .news-card, .calendar-item, .fund-card, .label, .btn');
+                items.forEach((item, index) => {
+                    item.style.animationDelay = `${index * 0.05}s`;
+                    item.classList.add('stagger-item');
+                });
+            } catch (e) {
+                console.error("Animation Init Error:", e);
+                // Fallback: make everything visible
+                document.querySelectorAll('.page').forEach(p => p.style.opacity = '1');
+            }
+        }
+
+        // Run as soon as possible
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initAnimations);
+        } else {
+            initAnimations();
+        }
 
         // Mock Webhook Logic
         async function executeWebhook(symbol) {
@@ -981,4 +995,179 @@
                         timestamp: new Date().toISOString()
                     })
                 });
-       
+                if (response.ok) tg.showAlert(`✅ ${symbol} analysis triggered! Check your Telegram bot.`);
+                else tg.showAlert('⚠️ Webhook error.');
+            } catch (e) {
+                tg.showAlert('❌ Connection error: Is n8n running?');
+            }
+        }
+
+        // Settings Interactivity
+        function toggleStrategy() {
+            const el = document.getElementById('strategy-mode');
+            const current = el.innerText;
+            const next = current === 'Turbo' ? 'Safe' : 'Turbo';
+            el.innerText = next;
+            if (tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+            tg.showScanQrPopup({ text: `Strategy changed to ${next}` });
+            setTimeout(() => tg.closeScanQrPopup(), 1000);
+        }
+
+        function confirmReset() {
+            tg.showConfirm('Are you sure you want to reset cache?', (ok) => {
+                if (ok) {
+                    tg.showAlert('Cache cleared!');
+                    if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('warning');
+                }
+            });
+        }
+
+        // Global Indices Fetching (Real Data)
+        async function updateIndices() {
+            const symbols = {
+                'bist-val': 'XU100.IS',
+                'nasdaq-val': '^IXIC',
+                'dow-val': '^DJI',
+                'sp500-val': '^GSPC'
+            };
+
+            const fetchIndex = async (id, symbol) => {
+                try {
+                    const encodedUrl = encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`);
+                    const response = await fetch(`https://api.allorigins.win/get?url=${encodedUrl}`);
+                    if (!response.ok) throw new Error('Proxy error');
+                    const data = await response.json();
+                    if (!data.contents) throw new Error('No contents');
+
+                    const financeData = JSON.parse(data.contents);
+                    if (financeData.chart && financeData.chart.result && financeData.chart.result[0]) {
+                        const meta = financeData.chart.result[0].meta;
+                        const price = meta.regularMarketPrice;
+                        const prevClose = meta.previousClose;
+                        const changePercent = prevClose ? ((price - prevClose) / prevClose) * 100 : 0;
+
+                        const el = document.getElementById(id);
+                        if (el) {
+                            el.innerText = price.toLocaleString(undefined, { maximumFractionDigits: 0 });
+                            const changeEl = el.nextElementSibling;
+                            if (changeEl && changeEl.classList.contains('change')) {
+                                changeEl.innerText = (changePercent >= 0 ? '+' : '') + changePercent.toFixed(1) + '%';
+                                changeEl.className = 'change ' + (changePercent >= 0 ? 'up' : 'down');
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error(`Error fetching index ${symbol}:`, e);
+                }
+            };
+
+            // Fetch all indices in parallel
+            await Promise.all(Object.entries(symbols).map(([id, symbol]) => fetchIndex(id, symbol)));
+        }
+
+        // Price & Market Data Fetching
+        async function fetchPrices() {
+            try {
+                // 1. Fetch Crypto Prices from Binance
+                const symbolsParam = encodeURIComponent('["BTCUSDT","ETHUSDT"]');
+                const cryptoRes = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbols=${symbolsParam}`);
+                if (cryptoRes.ok) {
+                    const cryptoData = await cryptoRes.json();
+                    const btc = cryptoData.find(p => p.symbol === 'BTCUSDT');
+                    const eth = cryptoData.find(p => p.symbol === 'ETHUSDT');
+
+                    if (btc && document.getElementById('btc-price')) {
+                        document.getElementById('btc-price').innerText = `$${parseFloat(btc.lastPrice).toLocaleString()}`;
+                        const btcChange = document.getElementById('btc-change');
+                        if (btcChange) {
+                            const btcPercent = parseFloat(btc.priceChangePercent);
+                            btcChange.innerText = (btcPercent >= 0 ? '+' : '') + btcPercent.toFixed(2) + '%';
+                            btcChange.className = 'change ' + (btcPercent >= 0 ? 'up' : 'down');
+                        }
+                    }
+
+                    if (eth && document.getElementById('eth-price')) {
+                        document.getElementById('eth-price').innerText = `$${parseFloat(eth.lastPrice).toLocaleString()}`;
+                        const ethChange = document.getElementById('eth-change');
+                        if (ethChange) {
+                            const ethPercent = parseFloat(eth.priceChangePercent);
+                            ethChange.innerText = (ethPercent >= 0 ? '+' : '') + ethPercent.toFixed(2) + '%';
+                            ethChange.className = 'change ' + (ethPercent >= 0 ? 'up' : 'down');
+                        }
+                    }
+                }
+
+                // 2. Fetch Global Market Data from CoinGecko (Using Proxy for CORS)
+                try {
+                    const cgUrl = encodeURIComponent('https://api.coingecko.com/api/v3/global');
+                    const globalRes = await fetch(`https://api.allorigins.win/get?url=${cgUrl}`);
+                    if (globalRes.ok) {
+                        const proxyData = await globalRes.json();
+                        const globalData = JSON.parse(proxyData.contents);
+                        const data = globalData.data;
+
+                        if (data) {
+                            if (document.getElementById('btcd-val'))
+                                document.getElementById('btcd-val').innerText = `${data.market_cap_percentage.btc.toFixed(1)}%`;
+
+                            const totalMC = data.total_market_cap.usd;
+                            if (document.getElementById('total1-val'))
+                                document.getElementById('total1-val').innerText = `$${(totalMC / 1e12).toFixed(2)}T`;
+
+                            const btcMC = totalMC * (data.market_cap_percentage.btc / 100);
+                            const total2 = totalMC - btcMC;
+                            if (document.getElementById('total2-val'))
+                                document.getElementById('total2-val').innerText = `$${(total2 / 1e12).toFixed(2)}T`;
+
+                            const ethMC = totalMC * (data.market_cap_percentage.eth / 100);
+                            const total3 = totalMC - btcMC - ethMC;
+                            if (document.getElementById('total3-val'))
+                                document.getElementById('total3-val').innerText = `$${(total3 / 1e9).toFixed(0)}B`;
+
+                            const top7 = Object.values(data.market_cap_percentage).slice(0, 7).reduce((a, b) => a + b, 0);
+                            if (document.getElementById('othersd-val'))
+                                document.getElementById('othersd-val').innerText = `${(100 - top7).toFixed(1)}%`;
+                        }
+                    }
+                } catch (cgErr) {
+                    console.error("CoinGecko Error:", cgErr);
+                }
+
+                updateIndices();
+            } catch (e) {
+                console.error("Fetch Error:", e);
+            }
+        }
+
+        // Fund Detail Logic
+        function openFundDetail(fundId) {
+            const overlay = document.getElementById('fund-detail-view');
+            const nameEl = document.getElementById('detail-fund-name');
+            const descEl = document.getElementById('detail-fund-desc');
+
+            const fundData = {
+                'TI1': { name: 'TI1 - İş Portföy İhracatçı Şirketler', desc: 'Fon toplam değerinin en az %80’i devamlı olarak ihraççı şirketlerin hisse senetlerine yatırılır.' },
+                'IIH': { name: 'IIH - İstanbul Portföy Üçüncü Hisse', desc: 'BIST üzerinde işlem gören yüksek büyüme potansiyeline sahip şirketlere odaklanır.' },
+                'GMR': { name: 'GMR - İhlas Portföy Hisse Senedi', desc: 'Genel piyasa getirisinin üzerinde getiri hedefleyen aktif yönetimli hisse senedi fonu.' }
+            };
+
+            const data = fundData[fundId];
+            if (data) {
+                nameEl.innerText = data.name;
+                descEl.innerText = data.desc;
+            }
+
+            overlay.style.display = 'block';
+            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+        }
+
+        function closeFundDetail() {
+            document.getElementById('fund-detail-view').style.display = 'none';
+        }
+
+        fetchPrices();
+        setInterval(fetchPrices, 15000);
+    </script>
+</body>
+
+</html>
