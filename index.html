@@ -1041,8 +1041,63 @@
             });
         }
 
-        // Helper for Yahoo Finance (Free via Proxy)
+        // Helper for Yahoo Finance (Free via Proxy with Fallback)
         async function fetchYahooData(symbol) {
+            const timestamp = new Date().getTime();
+            const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d&_=${timestamp}`;
+
+            // List of proxies to try in order
+            const proxies = [
+                // Priority 1: corsproxy.io (Fast & Reliable, Direct JSON)
+                { url: u => `https://corsproxy.io/?${encodeURIComponent(u)}`, isRaw: true },
+                // Priority 2: allorigins (JSON wrapped in contents)
+                { url: u => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`, isRaw: false },
+                // Priority 3: CodeTabs (Direct JSON)
+                { url: u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`, isRaw: true }
+            ];
+
+            for (const proxy of proxies) {
+                try {
+                    const proxyUrl = proxy.url(yahooUrl);
+                    const response = await fetch(proxyUrl);
+                    if (!response.ok) continue;
+
+                    let rawData = await response.json();
+
+                    // Handle allorigins specific wrapper
+                    if (!proxy.isRaw) {
+                        if (rawData.contents) {
+                            rawData = JSON.parse(rawData.contents);
+                        } else {
+                            continue; // Invalid allorigins response
+                        }
+                    }
+
+                    if (!rawData.chart || !rawData.chart.result || rawData.chart.result.length === 0) {
+                        continue;
+                    }
+
+                    const result = rawData.chart.result[0];
+                    const meta = result.meta;
+                    const price = meta.regularMarketPrice;
+                    const prevClose = meta.chartPreviousClose;
+                    let changePercent = 0;
+
+                    if (price && prevClose) {
+                        changePercent = ((price - prevClose) / prevClose) * 100;
+                    }
+
+                    return { price, change_percent: changePercent };
+                } catch (e) {
+                    console.warn(`Proxy failed, trying next...`, e);
+                }
+            }
+            console.error(`All proxies failed for ${symbol}`);
+            return null;
+        }
+
+        // LEGCY: Helper for Yahoo Finance (Free via Proxy)
+        async function fetchYahooDataLegacy(symbol) {
             try {
                 // Cache busting to ensure fresh data
                 const timestamp = new Date().getTime();
