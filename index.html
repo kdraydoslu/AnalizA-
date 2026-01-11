@@ -487,7 +487,11 @@
     <div id="market-page" class="page active">
         <div class="header"
             style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
-            <h1 style="font-size: 26px; font-weight: 700;">Dashboard</h1>
+            <div style="text-align: left;">
+                <h1 style="font-size: 26px; font-weight: 700;">Dashboard</h1>
+                <div id="last-update" style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">Son
+                    Güncelleme: Bekleniyor...</div>
+            </div>
             <div id="theme-toggle" onclick="toggleTheme()"
                 style="width: 44px; height: 44px; border-radius: 12px; background: var(--card-bg); border: 0.5px solid var(--glass-border); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease;">
                 <i class="fa-solid fa-moon" id="theme-icon"></i>
@@ -1041,7 +1045,8 @@
 
             const fetchIndex = async (id, symbol) => {
                 try {
-                    const encodedUrl = encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`);
+                    const cacheBuster = Date.now();
+                    const encodedUrl = encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d&_=${cacheBuster}`);
                     const response = await fetch(`https://api.allorigins.win/get?url=${encodedUrl}`);
                     if (!response.ok) throw new Error('Proxy error');
                     const data = await response.json();
@@ -1107,7 +1112,8 @@
 
                 // 2. Fetch Global Market Data from CoinGecko (Using Proxy for CORS)
                 try {
-                    const cgUrl = encodeURIComponent('https://api.coingecko.com/api/v3/global');
+                    const cacheBuster = Date.now();
+                    const cgUrl = encodeURIComponent(`https://api.coingecko.com/api/v3/global?_=${cacheBuster}`);
                     const globalRes = await fetch(`https://api.allorigins.win/get?url=${cgUrl}`);
                     if (globalRes.ok) {
                         const proxyData = await globalRes.json();
@@ -1139,6 +1145,13 @@
                     }
                 } catch (cgErr) {
                     console.error("CoinGecko Error:", cgErr);
+                }
+
+                // Update Last Update Time
+                const timeEl = document.getElementById('last-update');
+                if (timeEl) {
+                    const now = new Date();
+                    timeEl.innerText = `Son Güncelleme: ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
                 }
 
                 updateIndices();
