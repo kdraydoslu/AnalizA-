@@ -1008,10 +1008,16 @@
                         timestamp: new Date().toISOString()
                     })
                 });
-                if (response.ok) tg.showAlert(`✅ ${symbol} analysis triggered! Check your Telegram bot.`);
-                else tg.showAlert('⚠️ Webhook error.');
+                if (response.ok) {
+                    tg.showAlert(`✅ ${symbol} analiz isteği gönderildi!`);
+                } else {
+                    const errText = await response.text();
+                    console.error('Webhook Error:', response.status, errText);
+                    tg.showAlert(`⚠️ Hata: ${response.status} - ${response.statusText}\nLütfen n8n konsolunu kontrol edin.`);
+                }
             } catch (e) {
-                tg.showAlert('❌ Connection error: Is n8n running?');
+                console.error("Fetch/Network Error:", e);
+                tg.showAlert(`❌ Bağlantı Hatası: ${e.message}\nCORS ayarı veya ngrok kapalı olabilir.`);
             }
         }
 
