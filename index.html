@@ -747,34 +747,70 @@
             <h1>TEFAS Fon Analizi</h1>
         </div>
         <div id="funds-container">
-            <div class="fund-card" onclick="openFundDetail('TI1')">
+            <!-- TTE -->
+            <div class="fund-card" onclick="openFundDetail('TTE')">
                 <div class="cal-info">
-                    <span class="cal-name">TI1 - İş Portföy İhracatçı Şirketler</span>
-                    <span class="news-tag">Hisse Senedi Fonu</span>
+                    <span class="cal-name">TTE - İş Portföy Teknoloji</span>
+                    <span class="news-tag">Teknoloji</span>
                 </div>
                 <div class="cal-values">
-                    <span class="cal-actual">₺4.12</span>
-                    <span class="change up">+2.45%</span>
+                    <span class="cal-actual">...</span>
+                    <span class="change">...</span>
                 </div>
             </div>
-            <div class="fund-card" onclick="openFundDetail('IIH')">
+            <!-- IPB -->
+            <div class="fund-card" onclick="openFundDetail('IPB')">
                 <div class="cal-info">
-                    <span class="cal-name">IIH - İstanbul Portföy Üçüncü Hisse</span>
-                    <span class="news-tag">Hisse Senedi Fonu</span>
+                    <span class="cal-name">IPB - İstanbul P. Birinci Değişken</span>
+                    <span class="news-tag">Değişken</span>
                 </div>
                 <div class="cal-values">
-                    <span class="cal-actual">₺12.45</span>
-                    <span class="change up">+1.82%</span>
+                    <span class="cal-actual">...</span>
+                    <span class="change">...</span>
                 </div>
             </div>
-            <div class="fund-card" onclick="openFundDetail('GMR')">
+            <!-- TCD -->
+            <div class="fund-card" onclick="openFundDetail('TCD')">
                 <div class="cal-info">
-                    <span class="cal-name">GMR - İhlas Portföy Hisse Senedi </span>
-                    <span class="news-tag">Hisse Senedi Fonu</span>
+                    <span class="cal-name">TCD - Tacirler Değişken</span>
+                    <span class="news-tag">Değişken</span>
                 </div>
                 <div class="cal-values">
-                    <span class="cal-actual">₺2.85</span>
-                    <span class="change down">-0.45%</span>
+                    <span class="cal-actual">...</span>
+                    <span class="change">...</span>
+                </div>
+            </div>
+            <!-- MAC -->
+            <div class="fund-card" onclick="openFundDetail('MAC')">
+                <div class="cal-info">
+                    <span class="cal-name">MAC - Marmara Capital Hisse</span>
+                    <span class="news-tag">Hisse</span>
+                </div>
+                <div class="cal-values">
+                    <span class="cal-actual">...</span>
+                    <span class="change">...</span>
+                </div>
+            </div>
+            <!-- YAS -->
+            <div class="fund-card" onclick="openFundDetail('YAS')">
+                <div class="cal-info">
+                    <span class="cal-name">YAS - Koç Holding İştirak</span>
+                    <span class="news-tag">Hisse</span>
+                </div>
+                <div class="cal-values">
+                    <span class="cal-actual">...</span>
+                    <span class="change">...</span>
+                </div>
+            </div>
+            <!-- AFT -->
+            <div class="fund-card" onclick="openFundDetail('AFT')">
+                <div class="cal-info">
+                    <span class="cal-name">AFT - Ak Portföy Yeni Teknoloji</span>
+                    <span class="news-tag">Teknoloji</span>
+                </div>
+                <div class="cal-values">
+                    <span class="cal-actual">...</span>
+                    <span class="change">...</span>
                 </div>
             </div>
         </div>
@@ -1268,48 +1304,85 @@
         // Helper to fetch Fund Data (TEFAS Scraping via Proxy)
         async function fetchFunds() {
             const funds = [
-                { id: 'TI1', url: 'https://www.tefas.gov.tr/FonAnaliz.aspx?FonKod=TI1' },
-                { id: 'IIH', url: 'https://www.tefas.gov.tr/FonAnaliz.aspx?FonKod=IIH' },
-                { id: 'GMR', url: 'https://www.tefas.gov.tr/FonAnaliz.aspx?FonKod=GMR' }
+                'TTE', 'IPB', 'TCD', 'MAC', 'YAS', 'AFT'
             ];
 
             // Select all fund cards to update
             const cards = document.querySelectorAll('.fund-card');
 
-            for (let i = 0; i < funds.length; i++) {
-                const fund = funds[i];
-                const card = cards[i]; // Assuming order matches
-                if (!card) continue;
+            // Concurrent fetching using Promise.all
+            await Promise.all(funds.map(async (fundCode, index) => {
+                const card = cards[index];
+                if (!card) return;
 
-                try {
-                    // Fetch TEFAS Page via CORS Proxy
-                    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(fund.url)}`;
-                    const res = await fetch(proxyUrl);
-                    const json = await res.json();
+                const targetUrl = `https://www.tefas.gov.tr/FonAnaliz.aspx?FonKod=${fundCode}`;
+                // Using multi-proxy fallback similar to calendar
+                const proxies = [
+                    { url: u => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`, type: 'json' },
+                    { url: u => `https://corsproxy.io/?${encodeURIComponent(u)}`, type: 'text' }
+                ];
 
-                    if (json.contents) {
-                        // Simple regex to find price in TEFAS HTML structure (class="top-list" -> list items)
-                        // Structure: <span id="MainContent_PanelInfo_lblPrice" ...>4,123456</span>
-                        const priceMatch = json.contents.match(/id="MainContent_PanelInfo_lblPrice"[^>]*>([\d,]+)</);
-                        const dailyChangeMatch = json.contents.match(/id="MainContent_PanelInfo_lblDailyChange"[^>]*>([%\d.,-]+)</);
+                let htmlContent = null;
+                for (const proxy of proxies) {
+                    try {
+                        const proxyUrl = proxy.url(targetUrl);
+                        const res = await fetch(proxyUrl);
+                        if (!res.ok) continue;
 
-                        if (priceMatch) {
-                            const price = priceMatch[1];
-                            card.querySelector('.cal-actual').innerText = `₺${price}`;
+                        if (proxy.type === 'json') {
+                            const json = await res.json();
+                            if (json.contents) htmlContent = json.contents;
+                        } else {
+                            htmlContent = await res.text();
                         }
-                        if (dailyChangeMatch) {
-                            const change = dailyChangeMatch[1];
-                            const changeEl = card.querySelector('.change');
-                            const isUp = !change.includes('-');
-                            changeEl.innerText = change;
-                            changeEl.className = `change ${isUp ? 'up' : 'down'}`;
+                        if (htmlContent) break;
+                    } catch (e) {
+                        console.warn(`Proxy failed for ${fundCode}:`, e);
+                    }
+                }
+
+                if (htmlContent) {
+                    // Robust regex scraping
+                    // Searching for: <span id="MainContent_PanelInfo_lblPrice">1,052657</span>
+                    // Searching for: <span id="MainContent_PanelInfo_lblDate">11.01.2025</span> (Assuming ID, will verify)
+
+                    const priceMatch = htmlContent.match(/id="MainContent_PanelInfo_lblPrice"[^>]*>([\d,]+)</);
+                    const dateMatch = htmlContent.match(/id="MainContent_PanelInfo_lblDate"[^>]*>(\d{2}\.\d{2}\.\d{4})</);
+                    const dailyChangeMatch = htmlContent.match(/id="MainContent_PanelInfo_lblDailyChange"[^>]*>([%\d.,-]+)</);
+
+                    if (priceMatch) {
+                        card.querySelector('.cal-actual').innerText = `₺${priceMatch[1]}`;
+                    }
+                    if (dailyChangeMatch) {
+                        const rawChange = dailyChangeMatch[1];
+                        const changeEl = card.querySelector('.change');
+                        changeEl.innerText = rawChange;
+
+                        // Parse color
+                        if (rawChange.includes('-')) {
+                            changeEl.className = 'change down';
+                        } else {
+                            changeEl.className = 'change up';
                         }
                     }
-                } catch (e) {
-                    console.warn(`Fund Fetch Error (${fund.id}):`, e);
+                    if (dateMatch) {
+                        // Create or update date badge
+                        let dateEl = card.querySelector('.fund-date');
+                        if (!dateEl) {
+                            // Inject date element if not exists
+                            dateEl = document.createElement('div');
+                            dateEl.className = 'fund-date';
+                            dateEl.style.fontSize = '10px';
+                            dateEl.style.color = '#94a3b8';
+                            dateEl.style.marginTop = '4px';
+                            card.querySelector('.cal-info').appendChild(dateEl);
+                        }
+                        dateEl.innerText = dateMatch[1];
+                    }
                 }
-            }
+            }));
         }
+
 
         // --- Run Initial Data Fetch ---
         fetchPrices();
