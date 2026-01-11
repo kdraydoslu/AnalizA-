@@ -151,6 +151,13 @@
             margin-bottom: 4px;
         }
 
+        /* --- Dark Mode Adaptation for Iframe (Investing.com) --- */
+        body.dark-mode #calendar-container iframe {
+            /* Invert colors to match dark theme + hue rotate to keep red/green logic sane */
+            filter: invert(0.93) hue-rotate(180deg) contrast(1.1) saturate(0.8) brightness(0.9);
+            mix-blend-mode: normal;
+        }
+
         .price {
             font-size: 20px;
             font-weight: 600;
