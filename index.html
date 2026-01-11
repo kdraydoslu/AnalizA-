@@ -569,7 +569,7 @@
         <div class="button-group">
             <button class="btn" onclick="executeWebhook('BTC')"><i class="fa-solid fa-bolt"></i> Analyze BTC</button>
             <button class="btn" onclick="executeWebhook('ETH')"><i class="fa-solid fa-bolt"></i> Analyze ETH</button>
-            <button class="btn" onclick="executeWebhook('BIST100')"><i class="fa-solid fa-chart-line"></i>
+            <button class="btn" onclick="executeWebhook('BIST')"><i class="fa-solid fa-chart-line"></i>
                 BIST100</button>
             <button class="btn" onclick="executeWebhook('NASDAQ')"><i class="fa-solid fa-arrow-trend-up"></i>
                 NASDAQ</button>
@@ -997,13 +997,14 @@
                 // Show local feedback immediately
                 if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 
-                const WEBHOOK_URL = 'https://portably-inadvertent-hermine.ngrok-free.dev/webhook/execute-workflow';
+                // IMPORTANT: Using V2 Webhook URL to force fresh workflow logic
+                const WEBHOOK_URL = 'https://portably-inadvertent-hermine.ngrok-free.dev/webhook/analyze-market-v2';
                 const response = await fetch(WEBHOOK_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         user: tg.initDataUnsafe?.user?.username || 'Guest',
-                        symbol: symbol,
+                        symbol: symbol, // Ensure 'BIST' is passed for BIST100 button
                         timestamp: new Date().toISOString()
                     })
                 });
