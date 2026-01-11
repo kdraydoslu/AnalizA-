@@ -522,28 +522,21 @@
         </div>
 
         <!-- Market Cap & Dominance Section -->
-        <div class="label" style="margin: 20px 0 12px; border-left: 3px solid #818cf8; padding-left: 8px;">Dominans &
-            Market Cap</div>
+        <div class="label" style="margin: 20px 0 12px; border-left: 3px solid #818cf8; padding-left: 8px;">Piyasa
+            Verileri</div>
         <div class="grid">
             <div class="card">
-                <span class="label">BTC.D</span>
-                <span class="price" id="btcd-val">52.4%</span>
+                <span class="label">Bitcoin Hakimiyeti</span>
+                <span class="price" id="btcd-val">Wait...</span>
             </div>
             <div class="card">
-                <span class="label">OTHERS.D</span>
-                <span class="price" id="othersd-val">12.1%</span>
+                <span class="label">Kripto Piyasa Değeri</span>
+                <span class="price" id="total1-val">Wait...</span>
             </div>
-            <div class="card">
-                <span class="label">TOTAL 1</span>
-                <span class="price" id="total1-val">$2.4T</span>
-            </div>
-            <div class="card">
-                <span class="label">TOTAL 2</span>
-                <span class="price" id="total2-val">$1.1T</span>
-            </div>
+            <!-- Added 24h Volume if possible, otherwise placeholder or remove -->
             <div class="card card-full">
-                <span class="label">TOTAL 3 (Exclude BTC/ETH)</span>
-                <span class="price" id="total3-val">$640B</span>
+                <span class="label">Hacim (24s)</span>
+                <span class="price" id="vol24-val">Wait...</span>
             </div>
         </div>
 
@@ -1151,78 +1144,151 @@
         }
 
         // Price & Market Data Fetching
-        async function fetchPrices() {
-            try {
-                // 1. Fetch Crypto Prices from Yahoo Finance (Free)
-                const cryptos = [
-                    { id: 'btc-price', changeId: 'btc-change', symbol: 'BTC-USD' },
-                    { id: 'eth-price', changeId: 'eth-change', symbol: 'ETH-USD' }
-                ];
+        // --- Real-time Data Handling ---
 
-                await Promise.all(cryptos.map(async (c) => {
-                    const data = await fetchYahooData(c.symbol);
-                    if (data) {
-                        const priceEl = document.getElementById(c.id);
-                        const changeEl = document.getElementById(c.changeId);
+        function startRealtimeUpdates() {
+            // Initial Fetch
+            updateCryptoPrices();
+            updateGlobalMarket();
+            updateIndices();
 
-                        if (priceEl) {
-                            priceEl.innerText = `$${parseFloat(data.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                        }
-                        if (changeEl) {
-                            const percent = data.change_percent;
-                            changeEl.innerText = (percent >= 0 ? '+' : '') + parseFloat(percent).toFixed(2) + '%';
-                            changeEl.className = 'change ' + (percent >= 0 ? 'up' : 'down');
-                        }
-                    }
-                }));
+            // Set Intervals
+            setInterval(updateCryptoPrices, 15000); // 15s for Crypto
+            setInterval(updateIndices, 15000);      // 15s for Indices
+            setInterval(updateGlobalMarket, 60000); // 60s for Global Data
 
-                // 2. Fetch Global Market Data from CoinGecko (Using Proxy for CORS)
-                try {
-                    const cacheBuster = Date.now();
-                    const cgUrl = encodeURIComponent(`https://api.coingecko.com/api/v3/global?_=${cacheBuster}`);
-                    const globalRes = await fetch(`https://api.allorigins.win/get?url=${cgUrl}`);
-                    if (globalRes.ok) {
-                        const proxyData = await globalRes.json();
-                        const globalData = JSON.parse(proxyData.contents);
-                        const data = globalData.data;
-
-                        if (data) {
-                            if (document.getElementById('btcd-val'))
-                                document.getElementById('btcd-val').innerText = `${data.market_cap_percentage.btc.toFixed(1)}%`;
-
-                            const totalMC = data.total_market_cap.usd;
-                            if (document.getElementById('total1-val'))
-                                document.getElementById('total1-val').innerText = `$${(totalMC / 1e12).toFixed(2)}T`;
-
-                            const btcMC = totalMC * (data.market_cap_percentage.btc / 100);
-                            const total2 = totalMC - btcMC;
-                            if (document.getElementById('total2-val'))
-                                document.getElementById('total2-val').innerText = `$${(total2 / 1e12).toFixed(2)}T`;
-
-                            const ethMC = totalMC * (data.market_cap_percentage.eth / 100);
-                            const total3 = totalMC - btcMC - ethMC;
-                            if (document.getElementById('total3-val'))
-                                document.getElementById('total3-val').innerText = `$${(total3 / 1e9).toFixed(0)}B`;
-
-                            const top7 = Object.values(data.market_cap_percentage).slice(0, 7).reduce((a, b) => a + b, 0);
-                            if (document.getElementById('othersd-val'))
-                                document.getElementById('othersd-val').innerText = `${(100 - top7).toFixed(1)}%`;
-                        }
-                    }
-                } catch (cgErr) {
-                    console.error("CoinGecko Error:", cgErr);
-                }
-
-                // Update Last Update Time
+            // Update Time Clock
+            setInterval(() => {
                 const timeEl = document.getElementById('last-update');
                 if (timeEl) {
                     const now = new Date();
-                    timeEl.innerText = `Son Güncelleme: ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+                    timeEl.innerText = `Son Güncelleme: ${now.toLocaleTimeString()}`;
+                }
+            }, 1000);
+        }
+
+        async function updateCryptoPrices() {
+            const cryptos = [
+                { id: 'btc-price', changeId: 'btc-change', symbol: 'BTC-USD' },
+                { id: 'eth-price', changeId: 'eth-change', symbol: 'ETH-USD' }
+            ];
+
+            await Promise.all(cryptos.map(async (c) => {
+                const data = await fetchYahooData(c.symbol);
+                if (data) {
+                    const priceEl = document.getElementById(c.id);
+                    const changeEl = document.getElementById(c.changeId);
+
+                    if (priceEl) {
+                        priceEl.innerText = `$${parseFloat(data.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                    }
+                    if (changeEl) {
+                        const percent = data.change_percent;
+                        changeEl.innerText = (percent >= 0 ? '+' : '') + parseFloat(percent).toFixed(2) + '%';
+                        changeEl.className = 'change ' + (percent >= 0 ? 'up' : 'down');
+                    }
+                }
+            }));
+        }
+
+        async function updateGlobalMarket() {
+            try {
+                // Free CoinGecko API content for Global Data
+                const cacheBuster = Date.now();
+                const cgUrl = encodeURIComponent(`https://api.coingecko.com/api/v3/global?_=${cacheBuster}`);
+                const proxyUrl = `https://api.allorigins.win/get?url=${cgUrl}`;
+
+                const res = await fetch(proxyUrl);
+                if (!res.ok) return;
+
+                const json = await res.json();
+                if (!json.contents) return;
+
+                const data = JSON.parse(json.contents).data;
+                if (!data) return;
+
+                // Bitcoin Dominance
+                const btcD = data.market_cap_percentage.btc;
+                if (document.getElementById('btcd-val')) {
+                    document.getElementById('btcd-val').innerText = `${btcD.toFixed(1)}%`;
                 }
 
-                updateIndices();
+                // Total Market Cap
+                const totalCap = data.total_market_cap.usd;
+                if (document.getElementById('total1-val')) {
+                    document.getElementById('total1-val').innerText = `$${(totalCap / 1e12).toFixed(2)}T`;
+                }
+
+                // 24h Volume (if element exists)
+                const vol24 = data.total_volume.usd;
+                if (document.getElementById('vol24-val')) {
+                    document.getElementById('vol24-val').innerText = `$${(vol24 / 1e9).toFixed(0)}B`;
+                }
+
             } catch (e) {
-                console.error("Total Fetch Error:", e);
+                console.warn("Global Market Update Failed:", e);
+            }
+        }
+
+        async function updateIndices() {
+            // Update BIST 100 (Google -> Yahoo Fallback)
+            await updateBist100();
+
+            // Other Indices
+            const indexMap = {
+                'nasdaq-val': '^IXIC', // NASDAQ
+                'dow-val': '^DJI',   // Dow Jones
+                'sp500-val': '^GSPC'  // S&P 500
+            };
+
+            for (const [id, symbol] of Object.entries(indexMap)) {
+                const data = await fetchYahooData(symbol);
+                if (data) updateIndexUI(id, data);
+            }
+        }
+
+        async function updateBist100() {
+            // Try Google Finance via Proxy
+            let price = null;
+
+            try {
+                // Using corsproxy.io for Google Finance
+                const target = 'https://www.google.com/finance/quote/XU100:INDEXIST';
+                const proxy = `https://corsproxy.io/?${encodeURIComponent(target)}`;
+                const res = await fetch(proxy);
+                if (res.ok) {
+                    const html = await res.text();
+                    // Scrape Class "YMlKec fxKbKc" -> Price
+                    const match = html.match(/class="YMlKec fxKbKc">([\d,.]+)</);
+                    if (match) {
+                        price = match[1];
+                        const el = document.getElementById('bist-val');
+                        if (el) {
+                            el.innerText = price;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn("Google BIST scrape failed", e);
+            }
+
+            if (!price) {
+                // Fallback to Yahoo
+                const data = await fetchYahooData('^XU100');
+                if (data) updateIndexUI('bist-val', data);
+            }
+        }
+
+        function updateIndexUI(id, data) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.innerText = parseFloat(data.price).toLocaleString(undefined, { maximumFractionDigits: 0 });
+                const changeEl = el.nextElementSibling;
+                if (changeEl && changeEl.classList.contains('change')) {
+                    const changePercent = data.change_percent;
+                    changeEl.innerText = (changePercent >= 0 ? '+' : '') + parseFloat(changePercent).toFixed(1) + '%';
+                    changeEl.className = 'change ' + (changePercent >= 0 ? 'up' : 'down');
+                }
             }
         }
 
