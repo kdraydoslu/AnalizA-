@@ -726,61 +726,17 @@
         <div class="header">
             <h1>Ekonomik Takvim</h1>
         </div>
-        <div id="calendar-container">
-            <div class="calendar-item">
-                <div class="cal-info">
-                    <span class="cal-name">ABD Tüketici Fiyat Endeksi (TÜFE)</span>
-                    <span class="cal-time"><i class="fa-regular fa-clock"></i> Bugün 15:30</span>
-                    <span class="impact-high"><i class="fa-solid fa-fire"></i> Yüksek Etki</span>
-                </div>
-                <div class="cal-values">
-                    <span class="cal-actual">3.1%</span>
-                    <span class="cal-forecast">Beklenen: 2.9%</span>
-                </div>
-            </div>
-            <div class="calendar-item">
-                <div class="cal-info">
-                    <span class="cal-name">Tarım Dışı İstihdam</span>
-                    <span class="cal-time"><i class="fa-regular fa-clock"></i> Cuma 15:30</span>
-                    <span class="impact-high"><i class="fa-solid fa-fire"></i> Yüksek Etki</span>
-                </div>
-                <div class="cal-values">
-                    <span class="cal-actual">216K</span>
-                    <span class="cal-forecast">Beklenen: 170K</span>
-                </div>
-            </div>
-            <div class="calendar-item">
-                <div class="cal-info">
-                    <span class="cal-name">İşsizlik Haklarından Yararlanma Başvuruları (ICSA)</span>
-                    <span class="cal-time"><i class="fa-regular fa-clock"></i> Perşembe 15:30</span>
-                    <span class="impact-medium"><i class="fa-solid fa-bolt"></i> Orta Etki</span>
-                </div>
-                <div class="cal-values">
-                    <span class="cal-actual">210K</span>
-                    <span class="cal-forecast">Beklenen: 215K</span>
-                </div>
-            </div>
-            <div class="calendar-item">
-                <div class="cal-info">
-                    <span class="cal-name">Çekirdek PCE Fiyat Endeksi</span>
-                    <span class="cal-time"><i class="fa-regular fa-clock"></i> 26 Jan 15:30</span>
-                    <span class="impact-high"><i class="fa-solid fa-fire"></i> Yüksek Etki</span>
-                </div>
-                <div class="cal-values">
-                    <span class="cal-actual">0.2%</span>
-                    <span class="cal-forecast">Beklenen: 0.2%</span>
-                </div>
-            </div>
-            <div class="calendar-item">
-                <div class="cal-info">
-                    <span class="cal-name">GSYH (GDP) Çeyreklik</span>
-                    <span class="cal-time"><i class="fa-regular fa-clock"></i> 25 Jan 15:30</span>
-                    <span class="impact-high"><i class="fa-solid fa-fire"></i> Yüksek Etki</span>
-                </div>
-                <div class="cal-values">
-                    <span class="cal-actual">3.3%</span>
-                    <span class="cal-forecast">Beklenen: 2.0%</span>
-                </div>
+        <div id="calendar-container" style="overflow-x: hidden; border-radius: 12px; overflow: hidden;">
+            <iframe
+                src="https://sslecal2.investing.com?columns=exc_flags,exc_currency,exc_importance,exc_actual,exc_forecast,exc_previous&features=datepicker,timezone&countries=5,17,25,143,4,37,72,22,110,14,21,39,26,12,10,35,6,56,36,63,43&calType=week&timeZone=63&lang=10"
+                width="100%" height="500" frameborder="0" allowtransparency="true" marginwidth="0" marginheight="0"
+                style="border-radius: 12px;"></iframe>
+            <div class="poweredBy"
+                style="font-family: Arial, Helvetica, sans-serif; text-align: center; margin-top: 8px;">
+                <span style="font-size: 11px;color: #888;text-decoration: none;">Canlı Ekonomik Takvim <a
+                        href="https://tr.investing.com/" rel="nofollow" target="_blank"
+                        style="font-size: 11px;color: var(--accent-color); font-weight: bold;"
+                        class="underline_link">Investing.com Türkiye</a> tarafından sağlanmaktadır.</span>
             </div>
         </div>
     </div>
@@ -1260,8 +1216,107 @@
             document.getElementById('fund-detail-view').style.display = 'none';
         }
 
+        // Helper to fetch RSS feeds via rss2json
+        async function fetchRSS(rssUrl) {
+            try {
+                const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+                return data.status === 'ok' ? data.items : [];
+            } catch (e) {
+                console.error("RSS Fetch Error:", e);
+                return [];
+            }
+        }
+
+        async function fetchNews() {
+            try {
+                // 1. Crypto News (CoinDesk)
+                const cryptoNews = await fetchRSS('https://www.coindesk.com/arc/outboundfeeds/rss/');
+                const cryptoContainer = document.getElementById('crypto-news-container');
+                if (cryptoContainer && cryptoNews.length > 0) {
+                    cryptoContainer.innerHTML = cryptoNews.slice(0, 3).map(item => `
+                        <div class="news-card" onclick="window.open('${item.link}', '_blank')">
+                            <span class="news-tag">CRYPTO</span>
+                            <div class="news-title">${item.title}</div>
+                            <div class="news-meta">
+                                <span><i class="fa-regular fa-clock"></i> ${new Date(item.pubDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+
+                // 2. BIST/Market News (Google News RSS - Turkey Economy)
+                const marketNews = await fetchRSS('https://news.google.com/rss/search?q=Borsa+Istanbul+ekonomi&hl=tr-TR&gl=TR&ceid=TR:tr');
+                const bistContainer = document.getElementById('bist-news-container');
+                if (bistContainer && marketNews.length > 0) {
+                    bistContainer.innerHTML = marketNews.slice(0, 3).map(item => `
+                        <div class="news-card" onclick="window.open('${item.link}', '_blank')">
+                            <span class="news-tag" style="background: rgba(52, 211, 153, 0.2); color: #34d399;">BIST / EKONOMİ</span>
+                            <div class="news-title">${item.title}</div>
+                            <div class="news-meta">
+                                <span><i class="fa-regular fa-clock"></i> ${new Date(item.pubDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (e) {
+                console.error("News Update Error:", e);
+            }
+        }
+
+        // Helper to fetch Fund Data (TEFAS Scraping via Proxy)
+        async function fetchFunds() {
+            const funds = [
+                { id: 'TI1', url: 'https://www.tefas.gov.tr/FonAnaliz.aspx?FonKod=TI1' },
+                { id: 'IIH', url: 'https://www.tefas.gov.tr/FonAnaliz.aspx?FonKod=IIH' },
+                { id: 'GMR', url: 'https://www.tefas.gov.tr/FonAnaliz.aspx?FonKod=GMR' }
+            ];
+
+            // Select all fund cards to update
+            const cards = document.querySelectorAll('.fund-card');
+
+            for (let i = 0; i < funds.length; i++) {
+                const fund = funds[i];
+                const card = cards[i]; // Assuming order matches
+                if (!card) continue;
+
+                try {
+                    // Fetch TEFAS Page via CORS Proxy
+                    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(fund.url)}`;
+                    const res = await fetch(proxyUrl);
+                    const json = await res.json();
+
+                    if (json.contents) {
+                        // Simple regex to find price in TEFAS HTML structure (class="top-list" -> list items)
+                        // Structure: <span id="MainContent_PanelInfo_lblPrice" ...>4,123456</span>
+                        const priceMatch = json.contents.match(/id="MainContent_PanelInfo_lblPrice"[^>]*>([\d,]+)</);
+                        const dailyChangeMatch = json.contents.match(/id="MainContent_PanelInfo_lblDailyChange"[^>]*>([%\d.,-]+)</);
+
+                        if (priceMatch) {
+                            const price = priceMatch[1];
+                            card.querySelector('.cal-actual').innerText = `₺${price}`;
+                        }
+                        if (dailyChangeMatch) {
+                            const change = dailyChangeMatch[1];
+                            const changeEl = card.querySelector('.change');
+                            const isUp = !change.includes('-');
+                            changeEl.innerText = change;
+                            changeEl.className = `change ${isUp ? 'up' : 'down'}`;
+                        }
+                    }
+                } catch (e) {
+                    console.warn(`Fund Fetch Error (${fund.id}):`, e);
+                }
+            }
+        }
+
+        // --- Run Initial Data Fetch ---
         fetchPrices();
-        setInterval(fetchPrices, 15000);
+        fetchNews();
+        fetchFunds();
+        // updateCalendar removed (Using Iframe)
+        setInterval(fetchPrices, 30000); // Update market data every 30s
     </script>
 </body>
 
