@@ -1041,38 +1041,56 @@
             });
         }
 
-        // Helper for RapidAPI (Consolidated Data Source)
-        async function fetchRapidData(symbol) {
-            const apiKey = 'a1300f7de3msh7e1169c0248ca51p17ccf7jsn381536d1ee36';
-            const url = `https://real-time-finance-data.p.rapidapi.com/stock-quote?symbol=${encodeURIComponent(symbol)}&language=en`;
+        // Helper for Yahoo Finance (Free via Proxy)
+        async function fetchYahooData(symbol) {
+            try {
+                // Cache busting to ensure fresh data
+                const timestamp = new Date().getTime();
+                const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d&_=${timestamp}`;
+                // Using allorigins.win as CORS proxy
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(yahooUrl)}`;
 
-            const response = await fetch(url, {
-                headers: {
-                    'x-rapidapi-host': 'real-time-finance-data.p.rapidapi.com',
-                    'x-rapidapi-key': apiKey
+                const response = await fetch(proxyUrl);
+                if (!response.ok) throw new Error(`Proxy Error: ${response.status}`);
+
+                const data = await response.json();
+                const jsonContent = JSON.parse(data.contents);
+
+                if (!jsonContent.chart || !jsonContent.chart.result || jsonContent.chart.result.length === 0) {
+                    throw new Error('Invalid Yahoo data structure');
                 }
-            });
 
-            if (!response.ok) throw new Error(`API Error: ${response.status}`);
-            const result = await response.json();
-            if (result.status !== 'OK' || !result.data) throw new Error(`API Status: ${result.status}`);
-            return result.data;
+                const result = jsonContent.chart.result[0];
+                const meta = result.meta;
+                const price = meta.regularMarketPrice;
+                const prevClose = meta.chartPreviousClose;
+                let changePercent = 0;
+
+                if (price && prevClose) {
+                    changePercent = ((price - prevClose) / prevClose) * 100;
+                }
+
+                return { price, change_percent: changePercent };
+            } catch (e) {
+                console.error(`Yahoo Fetch Error (${symbol}):`, e);
+                return null;
+            }
         }
 
-        // Global Indices Fetching (Consolidated via RapidAPI)
+        // Global Indices Fetching (Yahoo Finance)
         async function updateIndices() {
             const indexMap = {
-                'bist-val': 'XU100:INDEXBIST',
-                'nasdaq-val': '.IXIC:INDEXNASDAQ',
-                'dow-val': '.DJI:INDEXDJX',
-                'sp500-val': '.INX:INDEXSP'
+                'bist-val': '^XU100', // BIST 100
+                'nasdaq-val': '^IXIC', // NASDAQ
+                'dow-val': '^DJI',   // Dow Jones
+                'sp500-val': '^GSPC'  // S&P 500
             };
 
             await Promise.all(Object.entries(indexMap).map(async ([id, symbol]) => {
-                try {
-                    const data = await fetchRapidData(symbol);
+                const data = await fetchYahooData(symbol);
+                if (data) {
                     const el = document.getElementById(id);
-                    if (el && data.price) {
+                    if (el) {
                         el.innerText = parseFloat(data.price).toLocaleString(undefined, { maximumFractionDigits: 0 });
                         const changeEl = el.nextElementSibling;
                         if (changeEl && changeEl.classList.contains('change')) {
@@ -1081,8 +1099,6 @@
                             changeEl.className = 'change ' + (changePercent >= 0 ? 'up' : 'down');
                         }
                     }
-                } catch (e) {
-                    console.error(`Error fetching index ${symbol}:`, e);
                 }
             }));
         }
@@ -1090,28 +1106,26 @@
         // Price & Market Data Fetching
         async function fetchPrices() {
             try {
-                // 1. Fetch Crypto Prices from RapidAPI (Consolidated)
+                // 1. Fetch Crypto Prices from Yahoo Finance (Free)
                 const cryptos = [
-                    { id: 'btc-price', changeId: 'btc-change', symbol: 'BTC:USD' },
-                    { id: 'eth-price', changeId: 'eth-change', symbol: 'ETH:USD' }
+                    { id: 'btc-price', changeId: 'btc-change', symbol: 'BTC-USD' },
+                    { id: 'eth-price', changeId: 'eth-change', symbol: 'ETH-USD' }
                 ];
 
                 await Promise.all(cryptos.map(async (c) => {
-                    try {
-                        const data = await fetchRapidData(c.symbol);
+                    const data = await fetchYahooData(c.symbol);
+                    if (data) {
                         const priceEl = document.getElementById(c.id);
                         const changeEl = document.getElementById(c.changeId);
 
-                        if (priceEl && data.price) {
-                            priceEl.innerText = `$${parseFloat(data.price).toLocaleString()}`;
+                        if (priceEl) {
+                            priceEl.innerText = `$${parseFloat(data.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
                         }
-                        if (changeEl && data.change_percent !== undefined) {
+                        if (changeEl) {
                             const percent = data.change_percent;
                             changeEl.innerText = (percent >= 0 ? '+' : '') + parseFloat(percent).toFixed(2) + '%';
                             changeEl.className = 'change ' + (percent >= 0 ? 'up' : 'down');
                         }
-                    } catch (err) {
-                        console.error(`Crypto Fetch Error (${c.symbol}):`, err);
                     }
                 }));
 
