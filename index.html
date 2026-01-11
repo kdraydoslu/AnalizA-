@@ -95,7 +95,7 @@
         }
 
         /* Staggered Entry Animation */
-        @keyframes slideUp {
+        @keyframes staggerSlideIn {
             from {
                 opacity: 0;
                 transform: translateY(20px);
@@ -109,7 +109,7 @@
 
         .stagger-item {
             opacity: 0;
-            animation: slideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            animation: staggerSlideIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
         }
 
         /* Dashboard/Market Styles */
@@ -960,15 +960,23 @@
             try {
                 const activePage = document.querySelector('.page.active');
                 if (!activePage) return;
+
+                // Set page opacity directly to be safe
+                activePage.style.opacity = '1';
+
                 const items = activePage.querySelectorAll('.card, .news-card, .calendar-item, .fund-card, .label, .btn');
+                if (items.length === 0) {
+                    // Fallback for empty looking pages
+                    activePage.querySelectorAll('*').forEach(el => el.style.opacity = '1');
+                }
+
                 items.forEach((item, index) => {
                     item.style.animationDelay = `${index * 0.05}s`;
                     item.classList.add('stagger-item');
                 });
             } catch (e) {
                 console.error("Animation Init Error:", e);
-                // Fallback: make everything visible
-                document.querySelectorAll('.page').forEach(p => p.style.opacity = '1');
+                document.querySelectorAll('*').forEach(el => el.style.opacity = '1');
             }
         }
 
