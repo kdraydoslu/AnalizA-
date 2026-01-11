@@ -733,17 +733,10 @@
         <div class="header">
             <h1>Ekonomik Takvim</h1>
         </div>
-        <div id="calendar-container" style="overflow-x: hidden; border-radius: 12px; overflow: hidden;">
-            <iframe
-                src="https://sslecal2.investing.com?columns=exc_flags,exc_currency,exc_importance,exc_actual,exc_forecast,exc_previous&features=datepicker,timezone&countries=5,17,25,143,4,37,72,22,110,14,21,39,26,12,10,35,6,56,36,63,43&calType=week&timeZone=63&lang=10"
-                width="100%" height="500" frameborder="0" allowtransparency="true" marginwidth="0" marginheight="0"
-                style="border-radius: 12px;"></iframe>
-            <div class="poweredBy"
-                style="font-family: Arial, Helvetica, sans-serif; text-align: center; margin-top: 8px;">
-                <span style="font-size: 11px;color: #888;text-decoration: none;">Canlı Ekonomik Takvim <a
-                        href="https://tr.investing.com/" rel="nofollow" target="_blank"
-                        style="font-size: 11px;color: var(--accent-color); font-weight: bold;"
-                        class="underline_link">Investing.com Türkiye</a> tarafından sağlanmaktadır.</span>
+        <div id="calendar-container">
+            <!-- Dynamic Calendar Items will be injected here via fetchCalendar() -->
+            <div class="calendar-item" style="justify-content: center; opacity: 0.7;">
+                <i class="fa-solid fa-spinner fa-spin"></i> &nbsp; Takvim Yükleniyor...
             </div>
         </div>
     </div>
@@ -1322,7 +1315,91 @@
         fetchPrices();
         fetchNews();
         fetchFunds();
-        // updateCalendar removed (Using Iframe)
+        // Helper to fetch and SCRAPE Investing.com Calendar via Proxy
+        async function fetchCalendar() {
+            const container = document.getElementById('calendar-container');
+            const url = 'https://sslecal2.investing.com?columns=exc_flags,exc_currency,exc_importance,exc_actual,exc_forecast,exc_previous&features=datepicker,timezone&countries=5,17,25,143,4,37,72,22,110,14,21,39,26,12,10,35,6,56,36,63,43&calType=day&timeZone=63&lang=10';
+
+            try {
+                // Use allorigins to get raw HTML wrapped in JSON
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+                const res = await fetch(proxyUrl);
+                const json = await res.json();
+
+                if (!json.contents) throw new Error('No content from proxy');
+
+                // Parse the returned HTML string
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(json.contents, 'text/html');
+
+                // Select event rows
+                const rows = doc.querySelectorAll('#ecEventsTable tbody tr');
+                let html = '';
+
+                rows.forEach(row => {
+                    // Skip header rows or empty rows
+                    if (row.id.startsWith('eventRowId')) {
+                        const time = row.querySelector('.time')?.innerText?.trim() || '';
+                        const currency = row.querySelector('.flagCur')?.innerText?.trim() || '';
+                        const event = row.querySelector('.event')?.innerText?.trim() || '';
+                        const actual = row.querySelector('.act')?.innerText?.trim() || '-';
+                        const forecast = row.querySelector('.fore')?.innerText?.trim() || '-';
+
+                        // Determine Impact via sentiment icons
+                        let impactClass = 'impact-low'; // default
+                        let impactIcon = 'fa-bolt';
+                        let impactText = 'Düşük';
+
+                        if (row.querySelector('.grayFullBullishIcon')) { impactClass = 'impact-medium'; impactText = 'Orta'; }
+                        if (row.querySelectorAll('.grayFullBullishIcon').length >= 3) { impactClass = 'impact-high'; impactIcon = 'fa-fire'; impactText = 'Yüksek'; }
+                        // Basic fallback if icons are strictly class based
+                        const sentiment = row.querySelector('.sentiment');
+                        if (sentiment) {
+                            if (sentiment.title.includes('Yüksek')) { impactClass = 'impact-high'; impactIcon = 'fa-fire'; impactText = 'Yüksek'; }
+                            else if (sentiment.title.includes('Orta')) { impactClass = 'impact-medium'; impactText = 'Orta'; }
+                        }
+
+                        // Filter out minor events if desired, or show all
+                        if (event) {
+                            html += `
+                                <div class="calendar-item">
+                                    <div class="cal-info">
+                                        <div style="display:flex; align-items:center; gap:6px;">
+                                            <span style="font-weight:bold; color:var(--text-primary);">${time}</span>
+                                            <span class="cal-name">${event}</span>
+                                        </div>
+                                        <div style="margin-top:4px; font-size:11px; display:flex; gap:8px;">
+                                           <span style="color:var(--accent-color); font-weight:600;">${currency}</span>
+                                           <span class="${impactClass}"><i class="fa-solid ${impactIcon}"></i> ${impactText}</span>
+                                        </div>
+                                    </div>
+                                    <div class="cal-values">
+                                        <span class="cal-actual" style="font-weight:700; color:${actual !== '-' ? 'var(--text-primary)' : '#888'}">${actual}</span>
+                                        <span class="cal-forecast" style="font-size:11px;">Bekl: ${forecast}</span>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    }
+                });
+
+                if (html) {
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = '<div style="text-align:center; padding:20px; color:#888;">Bugün için başka veri yok.</div>';
+                }
+
+            } catch (e) {
+                console.error('Calendar Scrape Error:', e);
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--danger-color);">Takvim yüklenemedi.</div>';
+            }
+        }
+
+        // --- Run Initial Data Fetch ---
+        fetchPrices();
+        fetchNews();
+        fetchFunds();
+        fetchCalendar();
         setInterval(fetchPrices, 30000); // Update market data every 30s
     </script>
 </body>
