@@ -1342,13 +1342,15 @@
                 }
 
                 if (htmlContent) {
-                    // Robust regex scraping
-                    // Searching for: <span id="MainContent_PanelInfo_lblPrice">1,052657</span>
-                    // Searching for: <span id="MainContent_PanelInfo_lblDate">11.01.2025</span> (Assuming ID, will verify)
+                    // Robust regex scraping based on list structure
+                    // Price: <li>Son Fiyat (TL)<br />...<span>1,052657</span>
+                    const priceMatch = htmlContent.match(/Son Fiyat \(TL\)[\s\S]*?<span>([\d,]+)<\/span>/);
 
-                    const priceMatch = htmlContent.match(/id="MainContent_PanelInfo_lblPrice"[^>]*>([\d,]+)</);
-                    const dateMatch = htmlContent.match(/id="MainContent_PanelInfo_lblDate"[^>]*>(\d{2}\.\d{2}\.\d{4})</);
-                    const dailyChangeMatch = htmlContent.match(/id="MainContent_PanelInfo_lblDailyChange"[^>]*>([%\d.,-]+)</);
+                    // Daily Change: <li>Günlük Getiri (%)<br />...<span>%0,2625</span>
+                    const dailyChangeMatch = htmlContent.match(/Günlük Getiri \(%\)[\s\S]*?<span>(%\s*[\d,.-]+)<\/span>/);
+
+                    // Date: Inside Highcharts categories array: categories: ["01.01.2025", ..., "10.01.2025"]
+                    const dateMatch = htmlContent.match(/categories"\s*:\s*\[([^\]]+)\]/);
 
                     if (priceMatch) {
                         card.querySelector('.cal-actual').innerText = `₺${priceMatch[1]}`;
@@ -1366,18 +1368,24 @@
                         }
                     }
                     if (dateMatch) {
-                        // Create or update date badge
-                        let dateEl = card.querySelector('.fund-date');
-                        if (!dateEl) {
-                            // Inject date element if not exists
-                            dateEl = document.createElement('div');
-                            dateEl.className = 'fund-date';
-                            dateEl.style.fontSize = '10px';
-                            dateEl.style.color = '#94a3b8';
-                            dateEl.style.marginTop = '4px';
-                            card.querySelector('.cal-info').appendChild(dateEl);
+                        // Extract the last date from the categories array string
+                        try {
+                            const dates = dateMatch[1].split(',');
+                            const lastDate = dates[dates.length - 1].replace(/["']/g, '').trim();
+
+                            let dateEl = card.querySelector('.fund-date');
+                            if (!dateEl) {
+                                dateEl = document.createElement('div');
+                                dateEl.className = 'fund-date';
+                                dateEl.style.fontSize = '10px';
+                                dateEl.style.color = '#94a3b8';
+                                dateEl.style.marginTop = '4px';
+                                card.querySelector('.cal-info').appendChild(dateEl);
+                            }
+                            dateEl.innerText = lastDate;
+                        } catch (e) {
+                            console.warn('Date parsing error', e);
                         }
-                        dateEl.innerText = dateMatch[1];
                     }
                 }
             }));
