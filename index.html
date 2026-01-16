@@ -1406,19 +1406,42 @@
 
         // --- Chart Logic ---
         let btcChart;
-        function initBTCChart() {
+        async function fetchBTCChartData() {
+            try {
+                // CryptoRank V2: Fetch BTC with sparkline
+                const data = await fetchCryptoRankData('/currencies', {
+                    symbols: 'BTC',
+                    optionalFields: 'sparkline'
+                });
+
+                if (data && data.data && data.data.length > 0) {
+                    const btc = data.data[0];
+                    const sparkline = btc.values.USD.sparkline; // Array of prices
+                    if (sparkline && sparkline.length > 0) {
+                        return sparkline.map(p => parseFloat(p));
+                    }
+                }
+            } catch (e) {
+                console.error('Fetch BTC Chart Error:', e);
+            }
+            return null;
+        }
+
+        async function initBTCChart() {
             const ctx = document.getElementById('btcChart').getContext('2d');
             const gradient = ctx.createLinearGradient(0, 0, 0, 200);
             gradient.addColorStop(0, 'rgba(245, 158, 11, 0.4)');
             gradient.addColorStop(1, 'rgba(245, 158, 11, 0)');
 
+            const initialData = await fetchBTCChartData() || [62000, 63500, 63000, 64500, 64000, 65200, 65000];
+
             btcChart = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'],
+                    labels: initialData.map((_, i) => i),
                     datasets: [{
                         label: 'BTC Price',
-                        data: [62000, 63500, 63000, 64500, 64000, 65200, 65000],
+                        data: initialData,
                         borderColor: '#f59e0b',
                         borderWidth: 2,
                         pointRadius: 0,
@@ -1441,10 +1464,11 @@
 
         // Modify initAnimations to include Chart and Portfolio
         const originalInitAnimations = initAnimations;
-        initAnimations = function () {
+        initAnimations = async function () {
             originalInitAnimations();
-            initBTCChart();
+            await initBTCChart();
             updateHoldingsUI();
+            startRealtimeUpdates(); // Ensure updates start
         };
 
         // Helper for Yahoo Finance (Free via Proxy with Fallback)
@@ -1569,12 +1593,16 @@
 
         function startRealtimeUpdates() {
             // Initial Fetch
+            updateCryptoPrices();
             updateGlobalMarket();
             updateIndices();
+            if (btcChart) updateBTCChart();
 
             // Set Intervals
-            setInterval(updateIndices, 15000);      // 15s for Indices
-            setInterval(updateGlobalMarket, 60000); // 60s for Global Data
+            setInterval(updateCryptoPrices, 30000);   // 30s for Prices
+            setInterval(updateIndices, 60000);        // 60s for Indices
+            setInterval(updateGlobalMarket, 300000);  // 5m for Global Data
+            setInterval(updateBTCChart, 300000);      // 5m for Chart
 
             // Update Time Clock
             setInterval(() => {
@@ -1584,6 +1612,15 @@
                     timeEl.innerText = `Son Güncelleme: ${now.toLocaleTimeString()}`;
                 }
             }, 1000);
+        }
+
+        async function updateBTCChart() {
+            const newData = await fetchBTCChartData();
+            if (newData && btcChart) {
+                btcChart.data.labels = newData.map((_, i) => i);
+                btcChart.data.datasets[0].data = newData;
+                btcChart.update('none'); // Update without animation for background updates
+            }
         }
 
         // CryptoRank API Helper
@@ -1616,36 +1653,32 @@
 
         async function updateCryptoPrices() {
             try {
-                // Fetch BTC and ETH data from CryptoRank
                 const cryptoMap = {
-                    'bitcoin': { priceId: 'btc-price', changeId: 'btc-change' },
-                    'ethereum': { priceId: 'eth-price', changeId: 'eth-change' }
+                    'BTC': { priceId: 'btc-price', changeId: 'btc-change' },
+                    'ETH': { priceId: 'eth-price', changeId: 'eth-change' }
                 };
 
                 const data = await fetchCryptoRankData('/currencies', {
-                    symbol: 'BTC,ETH',
-                    include: 'percentChange'
+                    symbols: 'BTC,ETH'
                 });
 
                 if (data && data.data) {
                     data.data.forEach(coin => {
-                        const symbol = coin.symbol.toLowerCase();
-                        let config;
+                        const symbol = coin.symbol;
+                        const config = cryptoMap[symbol];
+                        const usdValues = coin.values ? coin.values.USD : null;
 
-                        if (symbol === 'btc') config = cryptoMap['bitcoin'];
-                        else if (symbol === 'eth') config = cryptoMap['ethereum'];
-
-                        if (config && coin.price) {
+                        if (config && usdValues) {
                             const priceEl = document.getElementById(config.priceId);
                             const changeEl = document.getElementById(config.changeId);
 
                             if (priceEl) {
-                                const price = parseFloat(coin.price);
+                                const price = parseFloat(usdValues.price);
                                 priceEl.innerText = `$${price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
                             }
 
-                            if (changeEl && coin.percentChange) {
-                                const percent = parseFloat(coin.percentChange.h24 || 0);
+                            if (changeEl) {
+                                const percent = parseFloat(usdValues.percentChange24h || 0);
                                 changeEl.innerText = (percent >= 0 ? '+' : '') + percent.toFixed(2) + '%';
                                 changeEl.className = 'change ' + (percent >= 0 ? 'up' : 'down');
                             }
@@ -1659,27 +1692,20 @@
 
         async function updateGlobalMarket() {
             try {
-                // CryptoRank Global Data
                 const data = await fetchCryptoRankData('/global');
-
                 if (data && data.data) {
-                    const globalData = data.data;
+                    const global = data.data;
 
-                    // Bitcoin Dominance
-                    if (document.getElementById('btcd-val') && globalData.btcDominance) {
-                        document.getElementById('btcd-val').innerText = `${globalData.btcDominance.toFixed(1)}%`;
+                    if (document.getElementById('btcd-val')) {
+                        document.getElementById('btcd-val').innerText = `${global.btcDominance.toFixed(1)}%`;
                     }
-
-                    // Total Market Cap
-                    if (document.getElementById('total1-val') && globalData.totalMarketCap) {
-                        const totalCap = parseFloat(globalData.totalMarketCap);
-                        document.getElementById('total1-val').innerText = `$${(totalCap / 1e12).toFixed(2)}T`;
+                    if (document.getElementById('total1-val')) {
+                        const cap = global.totalMarketCap;
+                        document.getElementById('total1-val').innerText = `$${(cap / 1e12).toFixed(2)}T`;
                     }
-
-                    // 24h Volume
-                    if (document.getElementById('vol24-val') && globalData.totalVolume24h) {
-                        const vol24 = parseFloat(globalData.totalVolume24h);
-                        document.getElementById('vol24-val').innerText = `$${(vol24 / 1e9).toFixed(0)}B`;
+                    if (document.getElementById('vol24-val')) {
+                        const vol = global.totalVolume24h;
+                        document.getElementById('vol24-val').innerText = `$${(vol / 1e9).toFixed(0)}B`;
                     }
                 }
             } catch (e) {
@@ -1916,7 +1942,7 @@
 
 
         // --- Run Initial Data Fetch ---
-        fetchPrices();
+        // startRealtimeUpdates is called within initAnimations for better flow
         fetchNews();
         fetchFunds();
         // Helper to fetch and SCRAPE Investing.com Calendar via Proxy with Fallback
@@ -2108,11 +2134,7 @@
         } */
 
         // --- Run Initial Data Fetch ---
-        fetchPrices();
-        fetchNews();
-        fetchFunds();
         fetchCalendar();
-        setInterval(fetchPrices, 30000); // Update market data every 30s
     </script>
 </body>
 
