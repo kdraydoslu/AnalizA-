@@ -487,6 +487,178 @@
             height: 100%;
             background: linear-gradient(to right, var(--accent-color), var(--success-color));
         }
+
+        /* PRO Features CSS */
+        .portfolio-summary {
+            background: linear-gradient(135deg, var(--accent-color), var(--accent-blue));
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 20px;
+            color: white;
+            box-shadow: 0 10px 25px rgba(139, 92, 246, 0.3);
+        }
+
+        .portfolio-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 8px 0;
+        }
+
+        .portfolio-change {
+            font-size: 16px;
+            opacity: 0.9;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .chart-container {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 16px;
+            margin-bottom: 24px;
+            height: 220px;
+        }
+
+        /* Modal / Overlay System */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 3000;
+            display: none;
+            padding: 20px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-color);
+            background: var(--bg-gradient);
+            border: 1px solid var(--glass-border);
+            border-radius: 28px;
+            padding: 24px;
+            width: 100%;
+            max-width: 450px;
+            max-height: 85vh;
+            overflow-y: auto;
+            position: relative;
+            animation: modalSlideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        @keyframes modalSlideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-close {
+            font-size: 24px;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+
+        /* Indicators */
+        .indicator-card {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 18px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        .signal-badge {
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .signal-buy {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success-color);
+        }
+
+        .signal-sell {
+            background: rgba(244, 63, 94, 0.15);
+            color: var(--danger-color);
+        }
+
+        .signal-neutral {
+            background: rgba(161, 161, 170, 0.15);
+            color: var(--text-muted);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+        }
+
+        .btn-success {
+            background: var(--success-color);
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 12px;
+            color: var(--text-color);
+            font-family: inherit;
+        }
+
+        .holding-item {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
     </style>
 </head>
 
@@ -496,7 +668,7 @@
         <div class="header"
             style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
             <div style="text-align: left;">
-                <h1 style="font-size: 26px; font-weight: 700;">Dashboard</h1>
+                <h1 style="font-size: 26px; font-weight: 700;">Dashboard PRO</h1>
                 <div id="last-update" style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">Son
                     Güncelleme: Bekleniyor...</div>
             </div>
@@ -504,6 +676,23 @@
                 style="width: 44px; height: 44px; border-radius: 12px; background: var(--card-bg); border: 0.5px solid var(--glass-border); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease;">
                 <i class="fa-solid fa-moon" id="theme-icon"></i>
             </div>
+        </div>
+
+        <!-- Portföy Özeti -->
+        <div class="portfolio-summary stagger-item">
+            <div class="label" style="color: rgba(255,255,255,0.8); margin-bottom: 4px;">Toplam Portföy Değeri</div>
+            <div class="portfolio-value" id="portfolio-total-val">$0.00</div>
+            <div class="portfolio-change">
+                <i class="fa-solid fa-caret-up"></i>
+                <span id="portfolio-profit-val">$0.00 (0.00%)</span>
+            </div>
+        </div>
+
+        <!-- BTC Grafiği -->
+        <div class="label stagger-item" style="margin-bottom: 12px; border-left: 3px solid #f59e0b; padding-left: 8px;">
+            Bitcoin 24H Analiz</div>
+        <div class="chart-container stagger-item">
+            <canvas id="btcChart"></canvas>
         </div>
 
         <!-- Crypto Section -->
@@ -574,6 +763,67 @@
             <button class="btn" onclick="executeWebhook('SP500')"><i class="fa-solid fa-layer-group"></i> S&P
                 500</button>
         </div>
+    </div>
+
+    <!-- ANALYSIS PAGE -->
+    <div id="analysis-page" class="page">
+        <div class="header">
+            <h1>Teknik Analiz</h1>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 20px;">
+            <label>Analiz Edilecek Varlık</label>
+            <select id="analysis-asset" onchange="updateAnalysis()">
+                <option value="BTC">Bitcoin (BTC)</option>
+                <option value="ETH">Ethereum (ETH)</option>
+                <option value="BIST">BIST 100</option>
+            </select>
+        </div>
+
+        <div id="analysis-container">
+            <div class="indicator-card">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div class="label">RSI (14)</div>
+                        <div class="price" id="rsi-val">65.4</div>
+                    </div>
+                    <div class="signal-badge signal-neutral" id="rsi-signal">Nötr</div>
+                </div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">Aşırı alım bölgesine
+                    yaklaşıyor.</div>
+            </div>
+
+            <div class="indicator-card">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div class="label">MACD</div>
+                        <div class="price" id="macd-val">Bullish Cross</div>
+                    </div>
+                    <div class="signal-badge signal-buy" id="macd-signal">Al</div>
+                </div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">Momentum yukarı yönlü
+                    güçleniyor.</div>
+            </div>
+
+            <div class="indicator-card">
+                <div class="label">Hareketli Ortalamalar</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px;">
+                    <div>
+                        <div style="font-size: 11px; color: var(--text-muted);">MA 20</div>
+                        <div style="font-weight: 600;">$64,120</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; color: var(--text-muted);">MA 50</div>
+                        <div style="font-weight: 600;">$62,800</div>
+                    </div>
+                </div>
+                <div class="signal-badge signal-buy" style="margin-top: 12px;">Güçlü Al</div>
+            </div>
+        </div>
+
+        <button class="btn" style="margin-top: 20px;" onclick="executeWebhook('TECHNICAL_ANALYSIS')">
+            <i class="fa-solid fa-robot"></i> Detaylı Yapay Zeka Raporu
+        </button>
     </div>
 
     <!-- NEWS PAGE -->
@@ -869,6 +1119,53 @@
         </button>
     </div>
 
+    <!-- PORTFOLIO MODAL -->
+    <div id="portfolio-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 style="font-size: 20px;">Portföy Yönetimi</h2>
+                <i class="fa-solid fa-xmark modal-close" onclick="closeModal('portfolio-modal')"></i>
+            </div>
+            <div id="holdings-list">
+                <!-- Varlıklar buraya eklenecek -->
+                <div style="text-align: center; color: var(--text-muted); padding: 20px;">
+                    Yükleniyor...
+                </div>
+            </div>
+            <button class="btn btn-success" onclick="openModal('add-holding-modal')" style="margin-top: 20px;">
+                <i class="fa-solid fa-plus"></i> Yeni Varlık Ekle
+            </button>
+        </div>
+    </div>
+
+    <!-- ADD HOLDING MODAL -->
+    <div id="add-holding-modal" class="modal-overlay" style="z-index: 3100;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 style="font-size: 20px;">Varlık Ekle</h2>
+                <i class="fa-solid fa-xmark modal-close" onclick="closeModal('add-holding-modal')"></i>
+            </div>
+            <div class="form-group">
+                <label>Varlık</label>
+                <select id="holding-asset">
+                    <option value="BTC">Bitcoin (BTC)</option>
+                    <option value="ETH">Ethereum (ETH)</option>
+                    <option value="SOL">Solana (SOL)</option>
+                    <option value="BNB">Binance Coin (BNB)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Miktar</label>
+                <input type="number" id="holding-amount" placeholder="0.00" step="any">
+            </div>
+            <div class="form-group">
+                <label>Ortalama Maliyet ($)</label>
+                <input type="number" id="holding-cost" placeholder="0.00" step="any">
+            </div>
+            <button class="btn" onclick="saveHolding()">Kaydet</button>
+        </div>
+    </div>
+
     <!-- BOTTOM NAVIGATION -->
     <nav class="bottom-nav">
         <a href="#" class="nav-item active" onclick="switchPage('market-page', this)">
@@ -877,19 +1174,23 @@
         </a>
         <a href="#" class="nav-item" onclick="switchPage('news-page', this)">
             <i class="fa-solid fa-newspaper"></i>
-            <span>News</span>
+            <span>Haberler</span>
         </a>
-        <a href="#" class="nav-item" onclick="switchPage('calendar-page', this)">
-            <i class="fa-solid fa-calendar-days"></i>
-            <span>Calendar</span>
+        <a href="#" class="nav-item" onclick="switchPage('analysis-page', this)">
+            <i class="fa-solid fa-microscope"></i>
+            <span>Analiz</span>
+        </a>
+        <a href="#" class="nav-item" onclick="openModal('portfolio-modal')">
+            <i class="fa-solid fa-wallet"></i>
+            <span>Portföy</span>
         </a>
         <a href="#" class="nav-item" onclick="switchPage('funds-page', this)">
             <i class="fa-solid fa-sack-dollar"></i>
-            <span>Funds</span>
+            <span>Fonlar</span>
         </a>
         <a href="#" class="nav-item" onclick="switchPage('settings-page', this)">
             <i class="fa-solid fa-gear"></i>
-            <span>Settings</span>
+            <span>Ayar</span>
         </a>
     </nav>
 
@@ -1022,6 +1323,129 @@
                 }
             });
         }
+
+        // --- PRO Logic: Modals & Portfolio ---
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+            if (id === 'portfolio-modal') updateHoldingsUI();
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        let holdings = JSON.parse(localStorage.getItem('user_holdings') || '[]');
+
+        function saveHolding() {
+            const asset = document.getElementById('holding-asset').value;
+            const amount = parseFloat(document.getElementById('holding-amount').value);
+            const cost = parseFloat(document.getElementById('holding-cost').value);
+
+            if (!amount || !cost) {
+                tg.showAlert('Lütfen miktar ve maliyet giriniz!');
+                return;
+            }
+
+            holdings.push({ asset, amount, cost, id: Date.now() });
+            localStorage.setItem('user_holdings', JSON.stringify(holdings));
+            closeModal('add-holding-modal');
+            updateHoldingsUI();
+            tg.showAlert('Varlık başarıyla eklendi!');
+        }
+
+        function deleteHolding(id) {
+            holdings = holdings.filter(h => h.id !== id);
+            localStorage.setItem('user_holdings', JSON.stringify(holdings));
+            updateHoldingsUI();
+        }
+
+        async function updateHoldingsUI() {
+            const container = document.getElementById('holdings-list');
+            if (holdings.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 20px;">Henüz varlık eklemediniz.</div>';
+                return;
+            }
+
+            let html = '';
+            let totalVal = 0;
+            let totalCost = 0;
+
+            for (const h of holdings) {
+                // Not: Gerçek uygulamada fiyatlar API'den çekilmeli
+                // Simülasyon için BTC=65000, ETH=3500 baz alıyoruz
+                const currentPrice = h.asset === 'BTC' ? 65000 : 3500;
+                const value = h.amount * currentPrice;
+                const profit = value - (h.amount * h.cost);
+                totalVal += value;
+                totalCost += (h.amount * h.cost);
+
+                html += `
+                    <div class="holding-item">
+                        <div>
+                            <div style="font-weight:700;">${h.asset}</div>
+                            <div style="font-size:12px; color:var(--text-muted);">${h.amount} ${h.asset}</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-weight:600;">$${value.toLocaleString()}</div>
+                            <div style="font-size:11px; color:${profit >= 0 ? 'var(--success-color)' : 'var(--danger-color)'};">
+                                ${profit >= 0 ? '+' : ''}$${profit.toFixed(2)}
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-trash" onclick="deleteHolding(${h.id})" style="color:var(--danger-color); margin-left:12px; cursor:pointer; opacity:0.6;"></i>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+
+            // Market sayfasındaki özeti güncelle
+            document.getElementById('portfolio-total-val').innerText = `$${totalVal.toLocaleString()}`;
+            const totalProfitPercent = totalCost > 0 ? ((totalVal - totalCost) / totalCost * 100) : 0;
+            const profitVal = totalVal - totalCost;
+            document.getElementById('portfolio-profit-val').innerText = `$${profitVal.toLocaleString()} (${totalProfitPercent.toFixed(2)}%)`;
+        }
+
+        // --- Chart Logic ---
+        let btcChart;
+        function initBTCChart() {
+            const ctx = document.getElementById('btcChart').getContext('2d');
+            const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+            gradient.addColorStop(0, 'rgba(245, 158, 11, 0.4)');
+            gradient.addColorStop(1, 'rgba(245, 158, 11, 0)');
+
+            btcChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'],
+                    datasets: [{
+                        label: 'BTC Price',
+                        data: [62000, 63500, 63000, 64500, 64000, 65200, 65000],
+                        borderColor: '#f59e0b',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: true,
+                        backgroundColor: gradient,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { display: false },
+                        y: { display: false }
+                    }
+                }
+            });
+        }
+
+        // Modify initAnimations to include Chart and Portfolio
+        const originalInitAnimations = initAnimations;
+        initAnimations = function () {
+            originalInitAnimations();
+            initBTCChart();
+            updateHoldingsUI();
+        };
 
         // Helper for Yahoo Finance (Free via Proxy with Fallback)
         async function fetchYahooData(symbol) {
