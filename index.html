@@ -1357,8 +1357,39 @@
             updateHoldingsUI();
         }
 
+        // --- Robust Fetching Utility ---
+        async function fetchWithProxy(url, asJson = true) {
+            const timestamp = new Date().getTime();
+            const proxies = [
+                // AllOrigins (JSON wrapped)
+                {
+                    url: u => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}&_=${timestamp}`,
+                    process: async (res) => {
+                        const data = await res.json();
+                        return asJson ? JSON.parse(data.contents) : data.contents;
+                    }
+                },
+                // CorsProxy.io (Direct)
+                {
+                    url: u => `https://corsproxy.io/?${encodeURIComponent(u)}&_=${timestamp}`,
+                    process: async (res) => asJson ? await res.json() : await res.text()
+                }
+            ];
+
+            for (const proxy of proxies) {
+                try {
+                    const response = await fetch(proxy.url(url), { cache: 'no-store' });
+                    if (response.ok) return await proxy.process(response);
+                } catch (e) {
+                    console.warn(`Proxy failed: ${e.message}`);
+                }
+            }
+            throw new Error(`All proxies failed for ${url}`);
+        }
+
         async function updateHoldingsUI() {
             const container = document.getElementById('holdings-list');
+            if (!container) return;
             if (holdings.length === 0) {
                 container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 20px;">Henüz varlık eklemediniz.</div>';
                 return;
@@ -1406,20 +1437,14 @@
         let btcChart;
         async function fetchBTCChartData() {
             try {
-                // Using proxy for Binance to bypass CORS and ensure fresh data
-                const timestamp = new Date().getTime();
-                const binanceUrl = `https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=24&_=${timestamp}`;
-                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(binanceUrl)}&timestamp=${timestamp}`;
-
-                const res = await fetch(proxyUrl, { cache: 'no-store' });
-                if (res.ok) {
-                    const json = await res.json();
-                    const data = JSON.parse(json.contents);
-                    // kline[4] is the close price
-                    return data.map(k => parseFloat(k[4]));
+                // Binance via Proxy for high reliability
+                const binanceUrl = 'https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=24';
+                const data = await fetchWithProxy(binanceUrl);
+                if (Array.isArray(data)) {
+                    return data.map(k => parseFloat(k[4])); // Close price
                 }
             } catch (e) {
-                console.error('Binance Chart Fetch Error:', e);
+                console.error('Binance Chart Proxy Error:', e);
             }
             return null;
         }
@@ -1470,90 +1495,26 @@
 
         // Helper for Yahoo Finance (Free via Proxy with Fallback)
         async function fetchYahooData(symbol) {
-            const timestamp = new Date().getTime();
-            // Using 1m interval for most fresh state, range 1d
-            const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1m&range=1d&_=${timestamp}`;
-
-            // List of proxies to try in order
-            const proxies = [
-                // Priority 1: corsproxy.io (Fast & Reliable, Direct JSON)
-                { url: u => `https://corsproxy.io/?${encodeURIComponent(u)}`, isRaw: true },
-                // Priority 2: allorigins (JSON wrapped in contents)
-                { url: u => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`, isRaw: false },
-                // Priority 3: CodeTabs (Direct JSON)
-                { url: u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`, isRaw: true }
-            ];
-
-            for (const proxy of proxies) {
-                try {
-                    const proxyUrl = proxy.url(yahooUrl) + `&cachebust=${timestamp}`;
-                    const response = await fetch(proxyUrl, { cache: 'no-store' });
-                    if (!response.ok) continue;
-
-                    let rawData = await response.json();
-
-                    // Handle allorigins specific wrapper
-                    if (!proxy.isRaw) {
-                        if (rawData.contents) {
-                            rawData = JSON.parse(rawData.contents);
-                        } else {
-                            continue; // Invalid allorigins response
-                        }
-                    }
-
-                    if (!rawData.chart || !rawData.chart.result || rawData.chart.result.length === 0) {
-                        continue;
-                    }
-
-                    const result = rawData.chart.result[0];
-                    const meta = result.meta;
-
-                    // Priority: regularMarketPrice -> last indicators.quote close
-                    let price = meta.regularMarketPrice;
-                    if (!price && result.indicators && result.indicators.quote[0].close) {
-                        const closes = result.indicators.quote[0].close.filter(c => c !== null);
-                        if (closes.length > 0) price = closes[closes.length - 1];
-                    }
-
-                    const prevClose = meta.chartPreviousClose || meta.previousClose;
-                    let changePercent = 0;
-
-                    if (price && prevClose) {
-                        changePercent = ((price - prevClose) / prevClose) * 100;
-                    }
-
-                    return { price, change_percent: changePercent };
-                } catch (e) {
-                    console.warn(`Proxy failed, trying next...`, e);
-                }
-            }
-            console.error(`All proxies failed for ${symbol}`);
-            return null;
-        }
-
-        // LEGCY: Helper for Yahoo Finance (Free via Proxy)
-        async function fetchYahooDataLegacy(symbol) {
             try {
-                // Cache busting to ensure fresh data
-                const timestamp = new Date().getTime();
-                const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d&_=${timestamp}`;
-                // Using allorigins.win as CORS proxy
-                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(yahooUrl)}`;
+                // Using 1m interval for most fresh state, range 1d
+                const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1m&range=1d`;
+                const rawData = await fetchWithProxy(yahooUrl);
 
-                const response = await fetch(proxyUrl);
-                if (!response.ok) throw new Error(`Proxy Error: ${response.status}`);
-
-                const data = await response.json();
-                const jsonContent = JSON.parse(data.contents);
-
-                if (!jsonContent.chart || !jsonContent.chart.result || jsonContent.chart.result.length === 0) {
-                    throw new Error('Invalid Yahoo data structure');
+                if (!rawData.chart || !rawData.chart.result || rawData.chart.result.length === 0) {
+                    return null;
                 }
 
-                const result = jsonContent.chart.result[0];
+                const result = rawData.chart.result[0];
                 const meta = result.meta;
-                const price = meta.regularMarketPrice;
-                const prevClose = meta.chartPreviousClose;
+
+                // Priority: regularMarketPrice -> last indicators.quote close
+                let price = meta.regularMarketPrice;
+                if (!price && result.indicators && result.indicators.quote[0].close) {
+                    const closes = result.indicators.quote[0].close.filter(c => c !== null);
+                    if (closes.length > 0) price = closes[closes.length - 1];
+                }
+
+                const prevClose = meta.chartPreviousClose || meta.previousClose;
                 let changePercent = 0;
 
                 if (price && prevClose) {
@@ -1562,41 +1523,61 @@
 
                 return { price, change_percent: changePercent };
             } catch (e) {
-                console.error(`Yahoo Fetch Error (${symbol}):`, e);
+                console.error(`Yahoo Proxy Error (${symbol}):`, e);
                 return null;
             }
         }
 
-        // Global Indices Fetching (Yahoo Finance)
+        async function fetchYahooData(symbol) {
+            try {
+                const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1m&range=1d`;
+                const rawData = await fetchWithProxy(yahooUrl);
+
+                if (!rawData.chart || !rawData.chart.result || rawData.chart.result.length === 0) return null;
+
+                const result = rawData.chart.result[0];
+                const meta = result.meta;
+                let price = meta.regularMarketPrice;
+                if (!price && result.indicators && result.indicators.quote[0].close) {
+                    const closes = result.indicators.quote[0].close.filter(c => c !== null);
+                    if (closes.length > 0) price = closes[closes.length - 1];
+                }
+
+                const prevClose = meta.chartPreviousClose || meta.previousClose;
+                let changePercent = (price && prevClose) ? ((price - prevClose) / prevClose * 100) : 0;
+
+                return { price, change_percent: changePercent };
+            } catch (e) {
+                console.error(`Yahoo Proxy Error (${symbol}):`, e);
+                return null;
+            }
+        }
+
         async function updateIndices() {
             const indexMap = {
-                'bist-val': '^XU100', // BIST 100
-                'nasdaq-val': '^IXIC', // NASDAQ
-                'dow-val': '^DJI',   // Dow Jones
-                'sp500-val': '^GSPC'  // S&P 500
+                'bist-val': '^XU100',
+                'nasdaq-val': '^IXIC',
+                'dow-val': '^DJI',
+                'sp500-val': '^GSPC'
             };
 
-            await Promise.all(Object.entries(indexMap).map(async ([id, symbol]) => {
-                const data = await fetchYahooData(symbol);
-                if (data) {
-                    const el = document.getElementById(id);
-                    if (el) {
-                        el.innerText = parseFloat(data.price).toLocaleString(undefined, { maximumFractionDigits: 0 });
-
-                        // Weekend / Market Status check
-                        const day = new Date().getDay(); // 0: Sun, 6: Sat
-                        const hour = new Date().getUTCHours();
-                        const updateLabel = (day === 0 || day === 6) ? 'Haftalık Kapanış' : 'Canlı';
-
-                        const changeEl = el.nextElementSibling;
-                        if (changeEl && changeEl.classList.contains('change')) {
-                            const changePercent = data.change_percent;
-                            changeEl.innerText = (changePercent >= 0 ? '+' : '') + parseFloat(changePercent).toFixed(1) + `% (${updateLabel})`;
-                            changeEl.className = 'change ' + (changePercent >= 0 ? 'up' : 'down');
+            for (const [id, symbol] of Object.entries(indexMap)) {
+                try {
+                    const data = await fetchYahooData(symbol);
+                    if (data) {
+                        const el = document.getElementById(id);
+                        if (el) {
+                            el.innerText = parseFloat(data.price).toLocaleString(undefined, { maximumFractionDigits: 0 });
+                            const changeEl = el.nextElementSibling;
+                            if (changeEl) {
+                                const cp = data.change_percent;
+                                changeEl.innerText = (cp >= 0 ? '+' : '') + cp.toFixed(1) + '% (Kapanış)';
+                                changeEl.className = 'change ' + (cp >= 0 ? 'up' : 'down');
+                            }
                         }
                     }
-                }
-            }));
+                } catch (e) { console.warn(`Index ${id} failed`, e); }
+            }
         }
 
         // Price & Market Data Fetching
@@ -1625,34 +1606,16 @@
             }
         }
 
-        // CryptoRank API Helper
         async function fetchCryptoRankData(endpoint, params = {}) {
             try {
                 const API_KEY = '6ec6e7ee6b249625888c85e27cf9f8a211dc9604b07ebfc0e05a9da3f2c5';
                 const baseUrl = 'https://api.cryptorank.io/v2';
-
-                const timestamp = new Date().getTime();
-                const queryString = new URLSearchParams({ ...params, _: timestamp }).toString();
+                const queryString = new URLSearchParams(params).toString();
                 const url = `${baseUrl}${endpoint}${queryString ? '?' + queryString : ''}`;
 
-                const response = await fetch(url, {
-                    headers: {
-                        'X-Api-Key': API_KEY,
-                        'Cache-Control': 'no-cache',
-                        'Pragma': 'no-cache'
-                    },
-                    cache: 'no-store'
-                });
-
-                if (!response.ok) {
-                    console.error('CryptoRank API Error:', response.status);
-                    return null;
-                }
-
-                const data = await response.json();
-                return data;
+                return await fetchWithProxy(url);
             } catch (e) {
-                console.error('CryptoRank Fetch Error:', e);
+                console.error('CryptoRank Wrapper Error:', e);
                 return null;
             }
         }
@@ -1701,17 +1664,18 @@
                 const data = await fetchCryptoRankData('/global');
                 if (data && data.data) {
                     const global = data.data;
-
-                    if (document.getElementById('btcd-val')) {
-                        document.getElementById('btcd-val').innerText = `${global.btcDominance.toFixed(1)}%`;
-                    }
-                    if (document.getElementById('total1-val')) {
-                        const cap = global.totalMarketCap;
-                        document.getElementById('total1-val').innerText = `$${(cap / 1e12).toFixed(2)}T`;
-                    }
-                    if (document.getElementById('vol24-val')) {
-                        const vol = global.totalVolume24h;
-                        document.getElementById('vol24-val').innerText = `$${(vol / 1e9).toFixed(0)}B`;
+                    if (document.getElementById('btcd-val')) document.getElementById('btcd-val').innerText = `${global.btcDominance.toFixed(1)}%`;
+                    if (document.getElementById('total1-val')) document.getElementById('total1-val').innerText = `$${(global.totalMarketCap / 1e12).toFixed(2)}T`;
+                    if (document.getElementById('vol24-val')) document.getElementById('vol24-val').innerText = `$${(global.totalVolume24h / 1e9).toFixed(0)}B`;
+                } else {
+                    // CoinGecko Fallback for Market Metrics
+                    const cgUrl = 'https://api.coingecko.com/api/v3/global';
+                    const cgData = await fetchWithProxy(cgUrl);
+                    if (cgData && cgData.data) {
+                        const global = cgData.data;
+                        if (document.getElementById('btcd-val')) document.getElementById('btcd-val').innerText = `${global.market_cap_percentage.btc.toFixed(1)}%`;
+                        if (document.getElementById('total1-val')) document.getElementById('total1-val').innerText = `$${(global.total_market_cap.usd / 1e12).toFixed(2)}T`;
+                        if (document.getElementById('vol24-val')) document.getElementById('vol24-val').innerText = `$${(global.total_volume.usd / 1e9).toFixed(0)}B`;
                     }
                 }
             } catch (e) {
@@ -1719,67 +1683,7 @@
             }
         }
 
-        async function updateIndices() {
-            // Update BIST 100 (Google -> Yahoo Fallback)
-            await updateBist100();
-
-            // Other Indices
-            const indexMap = {
-                'nasdaq-val': '^IXIC', // NASDAQ
-                'dow-val': '^DJI',   // Dow Jones
-                'sp500-val': '^GSPC'  // S&P 500
-            };
-
-            for (const [id, symbol] of Object.entries(indexMap)) {
-                const data = await fetchYahooData(symbol);
-                if (data) updateIndexUI(id, data);
-            }
-        }
-
-        async function updateBist100() {
-            // Try Google Finance via Proxy
-            let price = null;
-
-            try {
-                // Using corsproxy.io for Google Finance
-                const target = 'https://www.google.com/finance/quote/XU100:INDEXIST';
-                const proxy = `https://corsproxy.io/?${encodeURIComponent(target)}`;
-                const res = await fetch(proxy);
-                if (res.ok) {
-                    const html = await res.text();
-                    // Scrape Class "YMlKec fxKbKc" -> Price
-                    const match = html.match(/class="YMlKec fxKbKc">([\d,.]+)</);
-                    if (match) {
-                        price = match[1];
-                        const el = document.getElementById('bist-val');
-                        if (el) {
-                            el.innerText = price;
-                        }
-                    }
-                }
-            } catch (e) {
-                console.warn("Google BIST scrape failed", e);
-            }
-
-            if (!price) {
-                // Fallback to Yahoo
-                const data = await fetchYahooData('^XU100');
-                if (data) updateIndexUI('bist-val', data);
-            }
-        }
-
-        function updateIndexUI(id, data) {
-            const el = document.getElementById(id);
-            if (el) {
-                el.innerText = parseFloat(data.price).toLocaleString(undefined, { maximumFractionDigits: 0 });
-                const changeEl = el.nextElementSibling;
-                if (changeEl && changeEl.classList.contains('change')) {
-                    const changePercent = data.change_percent;
-                    changeEl.innerText = (changePercent >= 0 ? '+' : '') + parseFloat(changePercent).toFixed(1) + '%';
-                    changeEl.className = 'change ' + (changePercent >= 0 ? 'up' : 'down');
-                }
-            }
-        }
+        // --- End of Data Logic ---
 
         // Fund Detail Logic
         function openFundDetail(fundId) {
