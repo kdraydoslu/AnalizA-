@@ -1406,21 +1406,15 @@
         let btcChart;
         async function fetchBTCChartData() {
             try {
-                // CryptoRank V2: Fetch BTC with sparkline
-                const data = await fetchCryptoRankData('/currencies', {
-                    symbols: 'BTC',
-                    optionalFields: 'sparkline'
-                });
-
-                if (data && data.data && data.data.length > 0) {
-                    const btc = data.data[0];
-                    const sparkline = btc.values.USD.sparkline; // Array of prices
-                    if (sparkline && sparkline.length > 0) {
-                        return sparkline.map(p => parseFloat(p));
-                    }
+                // Binance Public API for reliable 1h candles (24h coverage)
+                const res = await fetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=24');
+                if (res.ok) {
+                    const data = await res.json();
+                    // kline[4] is the close price
+                    return data.map(k => parseFloat(k[4]));
                 }
             } catch (e) {
-                console.error('Fetch BTC Chart Error:', e);
+                console.error('Binance Chart Fetch Error:', e);
             }
             return null;
         }
@@ -1472,7 +1466,8 @@
         // Helper for Yahoo Finance (Free via Proxy with Fallback)
         async function fetchYahooData(symbol) {
             const timestamp = new Date().getTime();
-            const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d&_=${timestamp}`;
+            // Using 1m interval for most fresh state, range 1d
+            const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1m&range=1d&_=${timestamp}`;
 
             // List of proxies to try in order
             const proxies = [
@@ -1507,8 +1502,15 @@
 
                     const result = rawData.chart.result[0];
                     const meta = result.meta;
-                    const price = meta.regularMarketPrice;
-                    const prevClose = meta.chartPreviousClose;
+
+                    // Priority: regularMarketPrice -> last indicators.quote close
+                    let price = meta.regularMarketPrice;
+                    if (!price && result.indicators && result.indicators.quote[0].close) {
+                        const closes = result.indicators.quote[0].close.filter(c => c !== null);
+                        if (closes.length > 0) price = closes[closes.length - 1];
+                    }
+
+                    const prevClose = meta.chartPreviousClose || meta.previousClose;
                     let changePercent = 0;
 
                     if (price && prevClose) {
@@ -1648,26 +1650,26 @@
                 };
 
                 const data = await fetchCryptoRankData('/currencies', {
-                    symbols: 'BTC,ETH'
+                    symbol: 'BTC,ETH',
+                    include: 'percentChange'
                 });
 
                 if (data && data.data) {
                     data.data.forEach(coin => {
                         const symbol = coin.symbol;
                         const config = cryptoMap[symbol];
-                        const usdValues = coin.values ? coin.values.USD : null;
 
-                        if (config && usdValues) {
+                        if (config) {
                             const priceEl = document.getElementById(config.priceId);
                             const changeEl = document.getElementById(config.changeId);
 
-                            if (priceEl) {
-                                const price = parseFloat(usdValues.price);
+                            if (priceEl && coin.price) {
+                                const price = parseFloat(coin.price);
                                 priceEl.innerText = `$${price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
                             }
 
-                            if (changeEl) {
-                                const percent = parseFloat(usdValues.percentChange24h || 0);
+                            if (changeEl && coin.percentChange) {
+                                const percent = parseFloat(coin.percentChange.h24 || 0);
                                 changeEl.innerText = (percent >= 0 ? '+' : '') + percent.toFixed(2) + '%';
                                 changeEl.className = 'change ' + (percent >= 0 ? 'up' : 'down');
                             }
