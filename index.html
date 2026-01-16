@@ -669,8 +669,6 @@
             style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
             <div style="text-align: left;">
                 <h1 style="font-size: 26px; font-weight: 700;">Dashboard PRO</h1>
-                <div id="last-update" style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">Son
-                    Güncelleme: Bekleniyor...</div>
             </div>
             <div id="theme-toggle" onclick="toggleTheme()"
                 style="width: 44px; height: 44px; border-radius: 12px; background: var(--card-bg); border: 0.5px solid var(--glass-border); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease;">
@@ -1603,15 +1601,6 @@
             setInterval(updateIndices, 60000);        // 60s for Indices
             setInterval(updateGlobalMarket, 300000);  // 5m for Global Data
             setInterval(updateBTCChart, 300000);      // 5m for Chart
-
-            // Update Time Clock
-            setInterval(() => {
-                const timeEl = document.getElementById('last-update');
-                if (timeEl) {
-                    const now = new Date();
-                    timeEl.innerText = `Son Güncelleme: ${now.toLocaleTimeString()}`;
-                }
-            }, 1000);
         }
 
         async function updateBTCChart() {
