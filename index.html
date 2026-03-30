@@ -1,1 +1,799 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Polymarket Mission Control</title>
+  <style>
+    :root {
+      --bg: #06101d;
+      --panel: rgba(12, 22, 39, 0.84);
+      --panel-strong: rgba(15, 28, 49, 0.96);
+      --line: rgba(148, 163, 184, 0.14);
+      --text: #edf4ff;
+      --muted: #9db2d2;
+      --green: #59f0a7;
+      --cyan: #52c7ff;
+      --amber: #ffcf70;
+      --red: #ff7f84;
+      --shadow: 0 30px 90px rgba(0, 0, 0, 0.32);
+      --radius: 24px;
+    }
 
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(82, 199, 255, 0.18), transparent 25%),
+        radial-gradient(circle at top right, rgba(89, 240, 167, 0.16), transparent 25%),
+        linear-gradient(180deg, #040b15 0%, #0a1321 100%);
+    }
+
+    .shell {
+      width: min(1380px, calc(100% - 28px));
+      margin: 20px auto 36px;
+    }
+
+    .hero, .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+    }
+
+    .hero {
+      padding: 28px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before,
+    .hero::after {
+      content: "";
+      position: absolute;
+      border-radius: 999px;
+      filter: blur(6px);
+      opacity: 0.9;
+    }
+
+    .hero::before {
+      width: 260px;
+      height: 260px;
+      right: -70px;
+      top: -60px;
+      background: radial-gradient(circle, rgba(82, 199, 255, 0.25), transparent 68%);
+    }
+
+    .hero::after {
+      width: 220px;
+      height: 220px;
+      right: 160px;
+      bottom: -80px;
+      background: radial-gradient(circle, rgba(89, 240, 167, 0.2), transparent 70%);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--green);
+      border: 1px solid rgba(89, 240, 167, 0.2);
+      background: rgba(89, 240, 167, 0.08);
+      padding: 8px 12px;
+      border-radius: 999px;
+      margin-bottom: 16px;
+    }
+
+    h1, h2, h3, p { margin: 0; }
+
+    h1 {
+      font-size: clamp(30px, 5vw, 52px);
+      line-height: 1.02;
+      max-width: 760px;
+      margin-bottom: 10px;
+    }
+
+    .hero p {
+      max-width: 760px;
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 16px;
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .stat {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--line);
+    }
+
+    .stat .label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .stat .value {
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .stack {
+      display: grid;
+      gap: 18px;
+    }
+
+    .card {
+      padding: 20px;
+    }
+
+    .card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .card-head p {
+      color: var(--muted);
+      line-height: 1.6;
+      margin-top: 6px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(82, 199, 255, 0.08);
+      border: 1px solid rgba(82, 199, 255, 0.18);
+      color: var(--cyan);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .grid.two {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 18px;
+      padding: 14px;
+    }
+
+    .panel h3 {
+      font-size: 15px;
+      margin-bottom: 8px;
+    }
+
+    .muted {
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .row > * {
+      flex: 1 1 0;
+      min-width: 0;
+    }
+
+    input, select, button, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: rgba(5, 10, 18, 0.8);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 12px 14px;
+      font: inherit;
+    }
+
+    textarea { min-height: 120px; resize: vertical; }
+
+    button {
+      cursor: pointer;
+      background:
+        linear-gradient(180deg, rgba(82, 199, 255, 0.14), rgba(82, 199, 255, 0.05));
+      transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      border-color: rgba(82, 199, 255, 0.34);
+    }
+
+    .btn-green {
+      background: linear-gradient(180deg, rgba(89, 240, 167, 0.18), rgba(89, 240, 167, 0.08));
+      border-color: rgba(89, 240, 167, 0.2);
+    }
+
+    .btn-red {
+      background: linear-gradient(180deg, rgba(255, 127, 132, 0.18), rgba(255, 127, 132, 0.08));
+      border-color: rgba(255, 127, 132, 0.2);
+    }
+
+    .btn-amber {
+      background: linear-gradient(180deg, rgba(255, 207, 112, 0.18), rgba(255, 207, 112, 0.08));
+      border-color: rgba(255, 207, 112, 0.2);
+    }
+
+    .list {
+      display: grid;
+      gap: 10px;
+      max-height: 420px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .item {
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.025);
+      border-radius: 18px;
+      padding: 14px;
+    }
+
+    .item-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .chips {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--muted);
+    }
+
+    .chip.on { color: var(--green); border-color: rgba(89, 240, 167, 0.24); }
+    .chip.off { color: var(--muted); }
+    .chip.warn { color: var(--amber); border-color: rgba(255, 207, 112, 0.24); }
+
+    .mono {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+      word-break: break-all;
+    }
+
+    .signal-type {
+      font-size: 12px;
+      color: var(--cyan);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .status-box {
+      white-space: pre-line;
+      font-size: 14px;
+      line-height: 1.7;
+      color: var(--muted);
+    }
+
+    .footer {
+      margin-top: 16px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      max-width: 360px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: rgba(10, 18, 32, 0.96);
+      border: 1px solid var(--line);
+      color: var(--text);
+      box-shadow: var(--shadow);
+      display: none;
+      z-index: 30;
+    }
+
+    @media (max-width: 1040px) {
+      .layout, .hero-stats, .grid.two {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <section class="hero">
+      <div class="eyebrow">🛰️ Polymarket Mission Control</div>
+      <h1>Botu tek panelden yönet, stratejileri aç kapa, bet at, redeem yap, son sinyalleri canlı izle.</h1>
+      <p>Bu dashboard botun local API’sine bağlı çalışır. Telegram komutlarının neredeyse tamamı burada buton ve formlar halinde bulunur.</p>
+      <div class="hero-stats">
+        <div class="stat"><div class="label">Dashboard</div><div class="value" id="stat-port">3001</div></div>
+        <div class="stat"><div class="label">Max Trade</div><div class="value" id="stat-maxtrade">$1</div></div>
+        <div class="stat"><div class="label">Strateji</div><div class="value" id="stat-strategies">0/0</div></div>
+        <div class="stat"><div class="label">Cüzdan</div><div class="value" id="stat-wallets">0</div></div>
+      </div>
+    </section>
+
+    <div class="layout">
+      <div class="stack">
+        <section class="card">
+          <div class="card-head">
+            <div>
+              <h2>📡 Genel Durum</h2>
+              <p>Bot sağlığı, çalışma özeti ve son durum bilgileri.</p>
+            </div>
+            <div class="badge" id="refresh-badge">Canlı yenileme: açık</div>
+          </div>
+          <div class="panel status-box" id="status-box">Yükleniyor...</div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <div>
+              <h2>🧠 Stratejiler</h2>
+              <p>Tüm strategy engine modüllerini burada açıp kapatabilirsin.</p>
+            </div>
+            <div class="badge">/strategies</div>
+          </div>
+          <div class="list" id="strategy-list"></div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <div>
+              <h2>⚡ Hızlı İşlemler</h2>
+              <p>Autobet, redeem, test sinyali ve manuel trade burada.</p>
+            </div>
+            <div class="badge">Hızlı komutlar</div>
+          </div>
+          <div class="grid two">
+            <div class="panel">
+              <h3>Legacy AutoBet</h3>
+              <p class="muted">Varsayılan miktar <strong>$1</strong>. Hızlı deneme için uygundur.</p>
+              <div class="row" style="margin-top: 12px;">
+                <button class="btn-green" id="autobet-on">🟢 Oto-Bet Aç</button>
+                <button class="btn-red" id="autobet-off">🔴 Oto-Bet Kapat</button>
+              </div>
+            </div>
+            <div class="panel">
+              <h3>Redeem ve Test</h3>
+              <p class="muted">Tahsil işlemi ya da dummy sinyal testi.</p>
+              <div class="row" style="margin-top: 12px;">
+                <button class="btn-amber" id="redeem-btn">💰 Redeem</button>
+                <button id="test-btn">🧪 Test Sinyali</button>
+              </div>
+            </div>
+          </div>
+          <div class="panel" style="margin-top: 12px;">
+            <h3>Manuel Trade</h3>
+            <div class="row" style="margin-top: 10px;">
+              <input id="trade-token" placeholder="Token ID" />
+              <select id="trade-side">
+                <option value="buy">buy</option>
+                <option value="sell">sell</option>
+              </select>
+              <input id="trade-amount" placeholder="USD miktarı (örn: 1)" />
+            </div>
+            <div class="row" style="margin-top: 10px;">
+              <button class="btn-green" id="trade-btn">🚀 İşlem Gönder</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <div>
+              <h2>🔍 Market Arama</h2>
+              <p>Arama yap, token bul, sonucu hızlı trade ile kullan.</p>
+            </div>
+            <div class="badge">/search</div>
+          </div>
+          <div class="row">
+            <input id="search-input" placeholder="Örn: trump, election, bitcoin..." />
+            <button id="search-btn">Ara</button>
+          </div>
+          <div class="list" id="search-results" style="margin-top: 12px; max-height: 340px;"></div>
+        </section>
+      </div>
+
+      <div class="stack">
+        <section class="card">
+          <div class="card-head">
+            <div>
+              <h2>👛 Cüzdanlar</h2>
+              <p>Whale copy için takip edilen cüzdanları buradan yönet.</p>
+            </div>
+            <div class="badge">/add /remove</div>
+          </div>
+          <div class="row">
+            <input id="wallet-input" placeholder="0x..." />
+            <button id="wallet-add-btn" class="btn-green">Ekle</button>
+          </div>
+          <div class="list" id="wallet-list" style="margin-top: 12px;"></div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <div>
+              <h2>📂 Kategoriler</h2>
+              <p>Balina akışını kategori bazlı dinle.</p>
+            </div>
+            <div class="badge">/trackcategory</div>
+          </div>
+          <div class="row">
+            <input id="category-input" placeholder="Kategori adı" />
+            <input id="category-min" placeholder="Min USD" />
+            <button id="category-add-btn" class="btn-green">Ekle</button>
+          </div>
+          <div class="list" id="category-list" style="margin-top: 12px;"></div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <div>
+              <h2>🛰️ Son Sinyaller</h2>
+              <p>Engine, category tracker, manuel işlem ve redeem aktiviteleri.</p>
+            </div>
+            <div class="badge">Canlı akış</div>
+          </div>
+          <div class="list" id="signal-list"></div>
+        </section>
+      </div>
+    </div>
+
+    <div class="footer">Polymarket Mission Control • Local Dashboard • Modern Operator UI</div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const state = { snapshot: null };
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.style.display = 'block';
+      clearTimeout(showToast._timer);
+      showToast._timer = setTimeout(() => { toast.style.display = 'none'; }, 2600);
+    }
+
+    async function api(path, options = {}) {
+      const response = await fetch(path, {
+        headers: { 'Content-Type': 'application/json' },
+        ...options,
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || 'İşlem başarısız.');
+      }
+      return payload.data;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;');
+    }
+
+    function renderSnapshot(snapshot) {
+      state.snapshot = snapshot;
+      document.getElementById('status-box').textContent = snapshot.statusText;
+      document.getElementById('stat-port').textContent = snapshot.config.dashboardPort;
+      document.getElementById('stat-maxtrade').textContent = `$${snapshot.config.maxTradeUsd}`;
+      document.getElementById('stat-strategies').textContent = `${snapshot.strategies.enabled}/${snapshot.strategies.total}`;
+      document.getElementById('stat-wallets').textContent = snapshot.wallets.length;
+
+      renderStrategies(snapshot.strategies.strategies || []);
+      renderWallets(snapshot.wallets || []);
+      renderCategories(snapshot.categories || []);
+      renderSignals(snapshot.recentSignals || []);
+    }
+
+    function renderStrategies(strategies) {
+      const root = document.getElementById('strategy-list');
+      if (!strategies.length) {
+        root.innerHTML = `<div class="item"><p class="muted">Strateji bulunamadı.</p></div>`;
+        return;
+      }
+
+      root.innerHTML = strategies.map((strategy) => `
+        <div class="item">
+          <div class="item-top">
+            <div>
+              <strong>${escapeHtml(strategy.name)}</strong>
+              <div class="muted">${escapeHtml(strategy.description || '')}</div>
+            </div>
+            <div class="chips">
+              <span class="chip ${strategy.enabled ? 'on' : 'off'}">${strategy.enabled ? 'AÇIK' : 'KAPALI'}</span>
+              <span class="chip">${escapeHtml(strategy.state)}</span>
+            </div>
+          </div>
+          <div class="chips" style="margin-bottom:10px;">
+            <span class="chip">${escapeHtml(strategy.id)}</span>
+            <span class="chip">${escapeHtml(strategy.category || '-')}</span>
+            <span class="chip ${strategy.automation === 'planned' ? 'warn' : ''}">${escapeHtml(strategy.automation || '-')}</span>
+          </div>
+          <div class="row">
+            <button class="btn-green" onclick="toggleStrategy('${escapeHtml(strategy.id)}', true)">Aç</button>
+            <button class="btn-red" onclick="toggleStrategy('${escapeHtml(strategy.id)}', false)">Kapat</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderWallets(wallets) {
+      const root = document.getElementById('wallet-list');
+      if (!wallets.length) {
+        root.innerHTML = `<div class="item"><p class="muted">Takip edilen cüzdan yok.</p></div>`;
+        return;
+      }
+
+      root.innerHTML = wallets.map((wallet) => `
+        <div class="item">
+          <div class="item-top">
+            <div class="mono">${escapeHtml(wallet)}</div>
+            <button class="btn-red" onclick="removeWallet('${escapeHtml(wallet)}')">Sil</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderCategories(categories) {
+      const root = document.getElementById('category-list');
+      if (!categories.length) {
+        root.innerHTML = `<div class="item"><p class="muted">Aktif kategori yok.</p></div>`;
+        return;
+      }
+
+      root.innerHTML = categories.map((category) => `
+        <div class="item">
+          <div class="item-top">
+            <div>
+              <strong>${escapeHtml(category.category)}</strong>
+              <div class="muted">Minimum: $${escapeHtml(category.minAmountUsd)}</div>
+            </div>
+            <button class="btn-red" onclick="removeCategory('${escapeHtml(category.category)}')">Sil</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderSignals(signals) {
+      const root = document.getElementById('signal-list');
+      if (!signals.length) {
+        root.innerHTML = `<div class="item"><p class="muted">Henüz sinyal yok.</p></div>`;
+        return;
+      }
+
+      root.innerHTML = signals.map((signal) => `
+        <div class="item">
+          <div class="item-top">
+            <span class="signal-type">${escapeHtml(signal.type)}</span>
+            <span class="chip">${new Date(signal.timestamp).toLocaleTimeString('tr-TR')}</span>
+          </div>
+          <div class="mono">${escapeHtml(JSON.stringify(signal.payload, null, 2))}</div>
+        </div>
+      `).join('');
+    }
+
+    async function refreshDashboard(silent = false) {
+      try {
+        const data = await api('/api/dashboard');
+        renderSnapshot(data);
+      } catch (error) {
+        if (!silent) {
+          showToast(error.message);
+        }
+      }
+    }
+
+    async function toggleStrategy(id, enabled) {
+      try {
+        await api('/api/strategies/toggle', {
+          method: 'POST',
+          body: JSON.stringify({ id, enabled }),
+        });
+        showToast(`Strategy ${enabled ? 'açıldı' : 'kapandı'}: ${id}`);
+        refreshDashboard(true);
+      } catch (error) {
+        showToast(error.message);
+      }
+    }
+
+    async function removeWallet(address) {
+      try {
+        await api(`/api/wallets?address=${encodeURIComponent(address)}`, { method: 'DELETE' });
+        showToast('Cüzdan silindi.');
+        refreshDashboard(true);
+      } catch (error) {
+        showToast(error.message);
+      }
+    }
+
+    async function removeCategory(category) {
+      try {
+        await api(`/api/categories?category=${encodeURIComponent(category)}`, { method: 'DELETE' });
+        showToast('Kategori silindi.');
+        refreshDashboard(true);
+      } catch (error) {
+        showToast(error.message);
+      }
+    }
+
+    document.getElementById('wallet-add-btn').addEventListener('click', async () => {
+      const address = document.getElementById('wallet-input').value.trim();
+      try {
+        await api('/api/wallets', {
+          method: 'POST',
+          body: JSON.stringify({ address }),
+        });
+        document.getElementById('wallet-input').value = '';
+        showToast('Cüzdan eklendi.');
+        refreshDashboard(true);
+      } catch (error) {
+        showToast(error.message);
+      }
+    });
+
+    document.getElementById('category-add-btn').addEventListener('click', async () => {
+      const category = document.getElementById('category-input').value.trim();
+      const minAmountUsd = document.getElementById('category-min').value.trim();
+      try {
+        const result = await api('/api/categories', {
+          method: 'POST',
+          body: JSON.stringify({ category, minAmountUsd }),
+        });
+        document.getElementById('category-input').value = '';
+        document.getElementById('category-min').value = '';
+        showToast(result.message || 'Kategori eklendi.');
+        refreshDashboard(true);
+      } catch (error) {
+        showToast(error.message);
+      }
+    });
+
+    document.getElementById('trade-btn').addEventListener('click', async () => {
+      const tokenId = document.getElementById('trade-token').value.trim();
+      const side = document.getElementById('trade-side').value;
+      const usdAmount = document.getElementById('trade-amount').value.trim();
+      try {
+        await api('/api/trade', {
+          method: 'POST',
+          body: JSON.stringify({ tokenId, side, usdAmount }),
+        });
+        showToast('İşlem gönderildi.');
+        refreshDashboard(true);
+      } catch (error) {
+        showToast(error.message);
+      }
+    });
+
+    document.getElementById('autobet-on').addEventListener('click', async () => {
+      try {
+        await api('/api/autobet', {
+          method: 'POST',
+          body: JSON.stringify({ enabled: true }),
+        });
+        showToast('Oto-bet açıldı.');
+        refreshDashboard(true);
+      } catch (error) {
+        showToast(error.message);
+      }
+    });
+
+    document.getElementById('autobet-off').addEventListener('click', async () => {
+      try {
+        await api('/api/autobet', {
+          method: 'POST',
+          body: JSON.stringify({ enabled: false }),
+        });
+        showToast('Oto-bet kapandı.');
+        refreshDashboard(true);
+      } catch (error) {
+        showToast(error.message);
+      }
+    });
+
+    document.getElementById('redeem-btn').addEventListener('click', async () => {
+      try {
+        const result = await api('/api/redeem', { method: 'POST' });
+        showToast(`Redeem tamamlandı. Market sayısı: ${result.length}`);
+        refreshDashboard(true);
+      } catch (error) {
+        showToast(error.message);
+      }
+    });
+
+    document.getElementById('test-btn').addEventListener('click', async () => {
+      try {
+        await api('/api/test', { method: 'POST' });
+        showToast('Test sinyali çalıştırıldı.');
+        refreshDashboard(true);
+      } catch (error) {
+        showToast(error.message);
+      }
+    });
+
+    document.getElementById('search-btn').addEventListener('click', async () => {
+      const query = document.getElementById('search-input').value.trim();
+      const root = document.getElementById('search-results');
+      root.innerHTML = `<div class="item"><p class="muted">Aranıyor...</p></div>`;
+      try {
+        const results = await api(`/api/search?q=${encodeURIComponent(query)}`);
+        if (!results.length) {
+          root.innerHTML = `<div class="item"><p class="muted">Sonuç bulunamadı.</p></div>`;
+          return;
+        }
+
+        root.innerHTML = results.slice(0, 8).map((market) => `
+          <div class="item">
+            <div class="item-top">
+              <strong>${escapeHtml(market.question)}</strong>
+              <span class="chip">${market.outcomePrices?.[0] ? `${(parseFloat(market.outcomePrices[0]) * 100).toFixed(1)}%` : 'N/A'}</span>
+            </div>
+            <div class="mono">${escapeHtml(market.clobTokenIds?.[0] || '')}</div>
+            <div class="row" style="margin-top:10px;">
+              <button class="btn-green" onclick="fillTrade('${escapeHtml(market.clobTokenIds?.[0] || '')}')">Trade Formuna Doldur</button>
+            </div>
+          </div>
+        `).join('');
+      } catch (error) {
+        root.innerHTML = `<div class="item"><p class="muted">${escapeHtml(error.message)}</p></div>`;
+      }
+    });
+
+    function fillTrade(tokenId) {
+      document.getElementById('trade-token').value = tokenId;
+      showToast('Token trade formuna dolduruldu.');
+    }
+
+    refreshDashboard();
+    setInterval(() => refreshDashboard(true), 5000);
+  </script>
+</body>
+</html>
