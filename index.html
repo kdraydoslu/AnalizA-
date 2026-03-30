@@ -2,40 +2,86 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Polymarket Mission Control</title>
   <style>
     :root {
-      --bg: #06101d;
-      --panel: rgba(12, 22, 39, 0.84);
-      --panel-strong: rgba(15, 28, 49, 0.96);
+      --bg: #050c16;
+      --bg-2: #0a1422;
+      --panel: rgba(14, 24, 40, 0.84);
+      --panel-strong: rgba(16, 28, 47, 0.96);
       --line: rgba(148, 163, 184, 0.14);
-      --text: #edf4ff;
-      --muted: #9db2d2;
-      --green: #59f0a7;
-      --cyan: #52c7ff;
-      --amber: #ffcf70;
-      --red: #ff7f84;
-      --shadow: 0 30px 90px rgba(0, 0, 0, 0.32);
+      --text: #edf5ff;
+      --muted: #93a7c8;
+      --green: #61f3ac;
+      --cyan: #53c7ff;
+      --amber: #ffc96b;
+      --red: #ff7c88;
+      --purple: #96a2ff;
+      --shadow: 0 30px 90px rgba(0, 0, 0, 0.34);
       --radius: 24px;
+      --nav-h: 82px;
     }
 
     * { box-sizing: border-box; }
 
+    html, body { height: 100%; }
+
     body {
       margin: 0;
-      min-height: 100vh;
       font-family: "Segoe UI", Arial, sans-serif;
       color: var(--text);
       background:
-        radial-gradient(circle at top left, rgba(82, 199, 255, 0.18), transparent 25%),
-        radial-gradient(circle at top right, rgba(89, 240, 167, 0.16), transparent 25%),
-        linear-gradient(180deg, #040b15 0%, #0a1321 100%);
+        radial-gradient(circle at top left, rgba(83, 199, 255, 0.14), transparent 22%),
+        radial-gradient(circle at top right, rgba(97, 243, 172, 0.12), transparent 20%),
+        linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+      overflow: hidden;
     }
 
-    .shell {
-      width: min(1380px, calc(100% - 28px));
-      margin: 20px auto 36px;
+    .app {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      padding: calc(14px + env(safe-area-inset-top)) 18px 14px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(5, 12, 22, 0.78);
+      backdrop-filter: blur(16px);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+
+    .topbar h1 {
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: -0.03em;
+    }
+
+    .topbar p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .content {
+      flex: 1;
+      overflow: auto;
+      padding: 16px 16px calc(var(--nav-h) + 18px + env(safe-area-inset-bottom));
+    }
+
+    .page {
+      display: none;
+      animation: fade 180ms ease;
+    }
+
+    .page.active { display: block; }
+
+    @keyframes fade {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     .hero, .card {
@@ -43,163 +89,166 @@
       border: 1px solid var(--line);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
-      backdrop-filter: blur(16px);
+      backdrop-filter: blur(18px);
     }
 
     .hero {
-      padding: 28px;
+      padding: 20px;
       position: relative;
       overflow: hidden;
+      margin-bottom: 16px;
     }
 
-    .hero::before,
     .hero::after {
       content: "";
       position: absolute;
-      border-radius: 999px;
-      filter: blur(6px);
-      opacity: 0.9;
-    }
-
-    .hero::before {
-      width: 260px;
-      height: 260px;
-      right: -70px;
-      top: -60px;
-      background: radial-gradient(circle, rgba(82, 199, 255, 0.25), transparent 68%);
-    }
-
-    .hero::after {
       width: 220px;
       height: 220px;
-      right: 160px;
-      bottom: -80px;
-      background: radial-gradient(circle, rgba(89, 240, 167, 0.2), transparent 70%);
+      right: -60px;
+      top: -50px;
+      background: radial-gradient(circle, rgba(83, 199, 255, 0.22), transparent 65%);
+      border-radius: 50%;
     }
 
     .eyebrow {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      font-size: 12px;
-      color: var(--green);
-      border: 1px solid rgba(89, 240, 167, 0.2);
-      background: rgba(89, 240, 167, 0.08);
       padding: 8px 12px;
       border-radius: 999px;
-      margin-bottom: 16px;
+      background: rgba(97, 243, 172, 0.08);
+      border: 1px solid rgba(97, 243, 172, 0.16);
+      color: var(--green);
+      font-size: 12px;
+      margin-bottom: 12px;
     }
 
-    h1, h2, h3, p { margin: 0; }
-
-    h1 {
-      font-size: clamp(30px, 5vw, 52px);
-      line-height: 1.02;
+    .hero h2 {
+      margin: 0 0 10px;
+      font-size: clamp(24px, 4vw, 36px);
+      line-height: 1.05;
       max-width: 760px;
-      margin-bottom: 10px;
     }
 
     .hero p {
-      max-width: 760px;
+      margin: 0;
       color: var(--muted);
-      line-height: 1.7;
-      font-size: 16px;
+      line-height: 1.6;
+      max-width: 760px;
     }
 
-    .hero-stats {
+    .stats {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 12px;
-      margin-top: 22px;
+      margin-top: 16px;
     }
 
     .stat {
-      padding: 16px;
+      padding: 14px;
       border-radius: 18px;
-      background: rgba(255, 255, 255, 0.04);
       border: 1px solid var(--line);
+      background: rgba(255,255,255,0.03);
     }
 
     .stat .label {
-      font-size: 12px;
+      font-size: 11px;
+      color: var(--muted);
       text-transform: uppercase;
       letter-spacing: 0.08em;
-      color: var(--muted);
       margin-bottom: 8px;
     }
 
     .stat .value {
-      font-size: 24px;
+      font-size: 22px;
       font-weight: 700;
-    }
-
-    .layout {
-      display: grid;
-      grid-template-columns: 1.2fr 0.8fr;
-      gap: 18px;
-      margin-top: 18px;
-    }
-
-    .stack {
-      display: grid;
-      gap: 18px;
-    }
-
-    .card {
-      padding: 20px;
-    }
-
-    .card-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-
-    .card-head p {
-      color: var(--muted);
-      line-height: 1.6;
-      margin-top: 6px;
-    }
-
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: rgba(82, 199, 255, 0.08);
-      border: 1px solid rgba(82, 199, 255, 0.18);
-      color: var(--cyan);
-      font-size: 12px;
-      white-space: nowrap;
     }
 
     .grid {
       display: grid;
-      gap: 12px;
+      gap: 14px;
     }
 
     .grid.two {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .panel {
+    .card {
+      padding: 16px;
+    }
+
+    .card-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: 14px;
+    }
+
+    .card-head h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .card-head p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .badge, .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      font-size: 12px;
       border: 1px solid var(--line);
-      background: rgba(255, 255, 255, 0.03);
+      background: rgba(255,255,255,0.04);
+      color: var(--muted);
+    }
+
+    .badge { white-space: nowrap; }
+    .chip.on { color: var(--green); border-color: rgba(97, 243, 172, 0.2); }
+    .chip.warn { color: var(--amber); border-color: rgba(255, 201, 107, 0.2); }
+    .chip.red { color: var(--red); border-color: rgba(255, 124, 136, 0.2); }
+
+    .stack {
+      display: grid;
+      gap: 12px;
+    }
+
+    .list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .item {
+      border: 1px solid var(--line);
       border-radius: 18px;
+      background: rgba(255,255,255,0.03);
       padding: 14px;
     }
 
-    .panel h3 {
-      font-size: 15px;
+    .item-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
       margin-bottom: 8px;
     }
 
-    .muted {
-      color: var(--muted);
-      line-height: 1.6;
+    .item-title {
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .muted { color: var(--muted); line-height: 1.55; }
+
+    .mono {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+      word-break: break-all;
     }
 
     .row {
@@ -216,9 +265,9 @@
     input, select, button, textarea {
       width: 100%;
       border: 1px solid var(--line);
-      background: rgba(5, 10, 18, 0.8);
+      background: rgba(5, 10, 18, 0.9);
       color: var(--text);
-      border-radius: 14px;
+      border-radius: 16px;
       padding: 12px 14px;
       font: inherit;
     }
@@ -227,264 +276,260 @@
 
     button {
       cursor: pointer;
+      transition: transform 140ms ease, border-color 140ms ease;
       background:
-        linear-gradient(180deg, rgba(82, 199, 255, 0.14), rgba(82, 199, 255, 0.05));
-      transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+        linear-gradient(180deg, rgba(83, 199, 255, 0.14), rgba(83, 199, 255, 0.06));
     }
 
-    button:hover {
-      transform: translateY(-1px);
-      border-color: rgba(82, 199, 255, 0.34);
-    }
-
-    .btn-green {
-      background: linear-gradient(180deg, rgba(89, 240, 167, 0.18), rgba(89, 240, 167, 0.08));
-      border-color: rgba(89, 240, 167, 0.2);
-    }
-
-    .btn-red {
-      background: linear-gradient(180deg, rgba(255, 127, 132, 0.18), rgba(255, 127, 132, 0.08));
-      border-color: rgba(255, 127, 132, 0.2);
-    }
-
-    .btn-amber {
-      background: linear-gradient(180deg, rgba(255, 207, 112, 0.18), rgba(255, 207, 112, 0.08));
-      border-color: rgba(255, 207, 112, 0.2);
-    }
-
-    .list {
-      display: grid;
-      gap: 10px;
-      max-height: 420px;
-      overflow: auto;
-      padding-right: 4px;
-    }
-
-    .item {
-      border: 1px solid var(--line);
-      background: rgba(255, 255, 255, 0.025);
-      border-radius: 18px;
-      padding: 14px;
-    }
-
-    .item-top {
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
-      align-items: center;
-      margin-bottom: 8px;
-    }
-
-    .chips {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .chip {
-      padding: 6px 10px;
-      border-radius: 999px;
-      font-size: 12px;
-      border: 1px solid var(--line);
-      background: rgba(255, 255, 255, 0.04);
-      color: var(--muted);
-    }
-
-    .chip.on { color: var(--green); border-color: rgba(89, 240, 167, 0.24); }
-    .chip.off { color: var(--muted); }
-    .chip.warn { color: var(--amber); border-color: rgba(255, 207, 112, 0.24); }
-
-    .mono {
-      font-family: Consolas, "Courier New", monospace;
-      font-size: 12px;
-      word-break: break-all;
-    }
-
-    .signal-type {
-      font-size: 12px;
-      color: var(--cyan);
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-    }
+    button:hover { transform: translateY(-1px); border-color: rgba(83, 199, 255, 0.34); }
+    .btn-green { background: linear-gradient(180deg, rgba(97,243,172,0.18), rgba(97,243,172,0.08)); border-color: rgba(97,243,172,0.18); }
+    .btn-red { background: linear-gradient(180deg, rgba(255,124,136,0.18), rgba(255,124,136,0.08)); border-color: rgba(255,124,136,0.18); }
+    .btn-amber { background: linear-gradient(180deg, rgba(255,201,107,0.18), rgba(255,201,107,0.08)); border-color: rgba(255,201,107,0.18); }
 
     .status-box {
       white-space: pre-line;
       font-size: 14px;
-      line-height: 1.7;
       color: var(--muted);
+      line-height: 1.7;
     }
 
-    .footer {
-      margin-top: 16px;
-      text-align: center;
+    .bottom-nav {
+      position: fixed;
+      left: 14px;
+      right: 14px;
+      bottom: calc(10px + env(safe-area-inset-bottom));
+      height: var(--nav-h);
+      background: rgba(8, 15, 26, 0.9);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      padding: 8px;
+      z-index: 30;
+      backdrop-filter: blur(18px);
+    }
+
+    .nav-btn {
+      border: 0;
+      background: transparent;
       color: var(--muted);
-      font-size: 13px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      border-radius: 18px;
+      font-size: 11px;
+      padding: 8px 6px;
+    }
+
+    .nav-btn.active {
+      color: var(--text);
+      background: linear-gradient(180deg, rgba(83, 199, 255, 0.14), rgba(83, 199, 255, 0.06));
     }
 
     .toast {
       position: fixed;
-      right: 18px;
-      bottom: 18px;
+      right: 16px;
+      bottom: calc(var(--nav-h) + 26px + env(safe-area-inset-bottom));
       max-width: 360px;
       padding: 14px 16px;
       border-radius: 16px;
-      background: rgba(10, 18, 32, 0.96);
+      background: rgba(10,18,32,0.96);
       border: 1px solid var(--line);
       color: var(--text);
       box-shadow: var(--shadow);
       display: none;
-      z-index: 30;
+      z-index: 40;
     }
 
-    @media (max-width: 1040px) {
-      .layout, .hero-stats, .grid.two {
-        grid-template-columns: 1fr;
+    @media (max-width: 980px) {
+      .grid.two, .stats {
+        grid-template-columns: 1fr 1fr;
       }
+    }
+
+    @media (max-width: 720px) {
+      .content { padding-left: 12px; padding-right: 12px; }
+      .hero, .card { border-radius: 20px; }
+      .grid.two, .stats { grid-template-columns: 1fr; }
+      .topbar { padding-left: 14px; padding-right: 14px; }
     }
   </style>
 </head>
 <body>
-  <div class="shell">
-    <section class="hero">
-      <div class="eyebrow">🛰️ Polymarket Mission Control</div>
-      <h1>Botu tek panelden yönet, stratejileri aç kapa, bet at, redeem yap, son sinyalleri canlı izle.</h1>
-      <p>Bu dashboard botun local API’sine bağlı çalışır. Telegram komutlarının neredeyse tamamı burada buton ve formlar halinde bulunur.</p>
-      <div class="hero-stats">
-        <div class="stat"><div class="label">Dashboard</div><div class="value" id="stat-port">3001</div></div>
-        <div class="stat"><div class="label">Max Trade</div><div class="value" id="stat-maxtrade">$1</div></div>
-        <div class="stat"><div class="label">Strateji</div><div class="value" id="stat-strategies">0/0</div></div>
-        <div class="stat"><div class="label">Cüzdan</div><div class="value" id="stat-wallets">0</div></div>
-      </div>
-    </section>
+  <div class="app">
+    <header class="topbar">
+      <h1>Polymarket Mission Control</h1>
+      <p>Mobil uyumlu operator paneli • canlı stratejiler • bet • PnL • order geçmişi</p>
+    </header>
 
-    <div class="layout">
-      <div class="stack">
-        <section class="card">
-          <div class="card-head">
-            <div>
-              <h2>📡 Genel Durum</h2>
-              <p>Bot sağlığı, çalışma özeti ve son durum bilgileri.</p>
-            </div>
-            <div class="badge" id="refresh-badge">Canlı yenileme: açık</div>
+    <main class="content">
+      <section class="page active" data-page="home">
+        <div class="hero">
+          <div class="eyebrow">🛰️ Ana Sayfa</div>
+          <h2>Botu tek panelden yönet, son sinyalleri izle, strateji durumunu canlı takip et.</h2>
+          <p>Bu ekran günlük operasyon görünümü içindir. Alttaki sekmelerle trade, strateji, portföy ve ayarlar sayfalarına geçebilirsin.</p>
+          <div class="stats">
+            <div class="stat"><div class="label">Dashboard</div><div class="value" id="stat-port">3001</div></div>
+            <div class="stat"><div class="label">Max Trade</div><div class="value" id="stat-maxtrade">$1</div></div>
+            <div class="stat"><div class="label">Strateji</div><div class="value" id="stat-strategies">0/0</div></div>
+            <div class="stat"><div class="label">Açık Pozisyon</div><div class="value" id="stat-openpositions">0</div></div>
           </div>
-          <div class="panel status-box" id="status-box">Yükleniyor...</div>
-        </section>
+        </div>
 
-        <section class="card">
-          <div class="card-head">
-            <div>
-              <h2>🧠 Stratejiler</h2>
-              <p>Tüm strategy engine modüllerini burada açıp kapatabilirsin.</p>
+        <div class="grid two">
+          <section class="card">
+            <div class="card-head">
+              <div><h3>📡 Genel Durum</h3><p>Bot sağlığı ve çalışma özeti.</p></div>
+              <div class="badge">Canlı</div>
             </div>
-            <div class="badge">/strategies</div>
-          </div>
-          <div class="list" id="strategy-list"></div>
-        </section>
+            <div class="status-box" id="status-box">Yükleniyor...</div>
+          </section>
 
-        <section class="card">
-          <div class="card-head">
-            <div>
-              <h2>⚡ Hızlı İşlemler</h2>
-              <p>Autobet, redeem, test sinyali ve manuel trade burada.</p>
+          <section class="card">
+            <div class="card-head">
+              <div><h3>⚡ Hızlı Aksiyonlar</h3><p>Oto-bet, redeem ve test sinyali.</p></div>
+              <div class="badge">Anlık</div>
             </div>
-            <div class="badge">Hızlı komutlar</div>
-          </div>
-          <div class="grid two">
-            <div class="panel">
-              <h3>Legacy AutoBet</h3>
-              <p class="muted">Varsayılan miktar <strong>$1</strong>. Hızlı deneme için uygundur.</p>
-              <div class="row" style="margin-top: 12px;">
+            <div class="stack">
+              <div class="row">
                 <button class="btn-green" id="autobet-on">🟢 Oto-Bet Aç</button>
                 <button class="btn-red" id="autobet-off">🔴 Oto-Bet Kapat</button>
               </div>
-            </div>
-            <div class="panel">
-              <h3>Redeem ve Test</h3>
-              <p class="muted">Tahsil işlemi ya da dummy sinyal testi.</p>
-              <div class="row" style="margin-top: 12px;">
+              <div class="row">
                 <button class="btn-amber" id="redeem-btn">💰 Redeem</button>
                 <button id="test-btn">🧪 Test Sinyali</button>
               </div>
             </div>
-          </div>
-          <div class="panel" style="margin-top: 12px;">
-            <h3>Manuel Trade</h3>
-            <div class="row" style="margin-top: 10px;">
-              <input id="trade-token" placeholder="Token ID" />
-              <select id="trade-side">
-                <option value="buy">buy</option>
-                <option value="sell">sell</option>
-              </select>
-              <input id="trade-amount" placeholder="USD miktarı (örn: 1)" />
-            </div>
-            <div class="row" style="margin-top: 10px;">
-              <button class="btn-green" id="trade-btn">🚀 İşlem Gönder</button>
-            </div>
-          </div>
-        </section>
+          </section>
+        </div>
 
-        <section class="card">
+        <section class="card" style="margin-top: 14px;">
           <div class="card-head">
-            <div>
-              <h2>🔍 Market Arama</h2>
-              <p>Arama yap, token bul, sonucu hızlı trade ile kullan.</p>
-            </div>
-            <div class="badge">/search</div>
-          </div>
-          <div class="row">
-            <input id="search-input" placeholder="Örn: trump, election, bitcoin..." />
-            <button id="search-btn">Ara</button>
-          </div>
-          <div class="list" id="search-results" style="margin-top: 12px; max-height: 340px;"></div>
-        </section>
-      </div>
-
-      <div class="stack">
-        <section class="card">
-          <div class="card-head">
-            <div>
-              <h2>👛 Cüzdanlar</h2>
-              <p>Whale copy için takip edilen cüzdanları buradan yönet.</p>
-            </div>
-            <div class="badge">/add /remove</div>
-          </div>
-          <div class="row">
-            <input id="wallet-input" placeholder="0x..." />
-            <button id="wallet-add-btn" class="btn-green">Ekle</button>
-          </div>
-          <div class="list" id="wallet-list" style="margin-top: 12px;"></div>
-        </section>
-
-        <section class="card">
-          <div class="card-head">
-            <div>
-              <h2>📂 Kategoriler</h2>
-              <p>Balina akışını kategori bazlı dinle.</p>
-            </div>
-            <div class="badge">/trackcategory</div>
-          </div>
-          <div class="row">
-            <input id="category-input" placeholder="Kategori adı" />
-            <input id="category-min" placeholder="Min USD" />
-            <button id="category-add-btn" class="btn-green">Ekle</button>
-          </div>
-          <div class="list" id="category-list" style="margin-top: 12px;"></div>
-        </section>
-
-        <section class="card">
-          <div class="card-head">
-            <div>
-              <h2>🛰️ Son Sinyaller</h2>
-              <p>Engine, category tracker, manuel işlem ve redeem aktiviteleri.</p>
-            </div>
-            <div class="badge">Canlı akış</div>
+            <div><h3>🛰️ Son Sinyaller</h3><p>Engine, category tracker, test ve manuel aktiviteler.</p></div>
+            <div class="badge">Akış</div>
           </div>
           <div class="list" id="signal-list"></div>
         </section>
-      </div>
-    </div>
+      </section>
 
-    <div class="footer">Polymarket Mission Control • Local Dashboard • Modern Operator UI</div>
+      <section class="page" data-page="trade">
+        <div class="card">
+          <div class="card-head">
+            <div><h3>🚀 Trade İşlemleri</h3><p>Manuel bet, market arama ve hızlı trade akışı.</p></div>
+            <div class="badge">Trade</div>
+          </div>
+          <div class="stack">
+            <div class="item">
+              <div class="item-title">Manuel Trade</div>
+              <div class="row" style="margin-top:10px;">
+                <input id="trade-token" placeholder="Token ID" />
+                <select id="trade-side">
+                  <option value="buy">buy</option>
+                  <option value="sell">sell</option>
+                </select>
+                <input id="trade-amount" placeholder="USD miktarı (örn: 1)" />
+              </div>
+              <div class="row" style="margin-top:10px;">
+                <button class="btn-green" id="trade-btn">🚀 İşlem Gönder</button>
+              </div>
+            </div>
+
+            <div class="item">
+              <div class="item-title">Market Arama</div>
+              <div class="row" style="margin-top:10px;">
+                <input id="search-input" placeholder="Örn: trump, election, bitcoin..." />
+                <button id="search-btn">Ara</button>
+              </div>
+              <div class="list" id="search-results" style="margin-top: 12px;"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" data-page="strategies">
+        <div class="card">
+          <div class="card-head">
+            <div><h3>🧠 Stratejiler</h3><p>Tüm strategy engine modüllerini açıp kapat.</p></div>
+            <div class="badge">Engine</div>
+          </div>
+          <div class="list" id="strategy-list"></div>
+        </div>
+      </section>
+
+      <section class="page" data-page="portfolio">
+        <div class="grid two">
+          <section class="card">
+            <div class="card-head">
+              <div><h3>💹 PnL Özeti</h3><p>Portföyün yaklaşık durum görünümü.</p></div>
+              <div class="badge">PnL</div>
+            </div>
+            <div class="stats">
+              <div class="stat"><div class="label">Toplam PnL</div><div class="value" id="pnl-total">$0</div></div>
+              <div class="stat"><div class="label">Realized</div><div class="value" id="pnl-realized">$0</div></div>
+              <div class="stat"><div class="label">Unrealized</div><div class="value" id="pnl-unrealized">$0</div></div>
+              <div class="stat"><div class="label">Current Value</div><div class="value" id="pnl-current">$0</div></div>
+            </div>
+            <div class="status-box" id="portfolio-meta" style="margin-top: 14px;"></div>
+          </section>
+
+          <section class="card">
+            <div class="card-head">
+              <div><h3>📜 Order Geçmişi</h3><p>Bot tarafından kaydedilen son işlemler.</p></div>
+              <div class="badge">History</div>
+            </div>
+            <div class="list" id="order-history-list"></div>
+          </section>
+        </div>
+
+        <section class="card" style="margin-top: 14px;">
+          <div class="card-head">
+            <div><h3>📦 Açık Pozisyonlar</h3><p>Gamma verisine göre açık pozisyonların.</p></div>
+            <div class="badge">Portfolio</div>
+          </div>
+          <div class="list" id="positions-list"></div>
+        </section>
+      </section>
+
+      <section class="page" data-page="settings">
+        <div class="grid two">
+          <section class="card">
+            <div class="card-head">
+              <div><h3>👛 Cüzdanlar</h3><p>Whale copy için takip edilen cüzdanları yönet.</p></div>
+              <div class="badge">Wallets</div>
+            </div>
+            <div class="row">
+              <input id="wallet-input" placeholder="0x..." />
+              <button id="wallet-add-btn" class="btn-green">Ekle</button>
+            </div>
+            <div class="list" id="wallet-list" style="margin-top: 12px;"></div>
+          </section>
+
+          <section class="card">
+            <div class="card-head">
+              <div><h3>📂 Kategoriler</h3><p>Balina akışını kategori bazlı dinle.</p></div>
+              <div class="badge">Categories</div>
+            </div>
+            <div class="row">
+              <input id="category-input" placeholder="Kategori adı" />
+              <input id="category-min" placeholder="Min USD" />
+              <button id="category-add-btn" class="btn-green">Ekle</button>
+            </div>
+            <div class="list" id="category-list" style="margin-top: 12px;"></div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav">
+      <button class="nav-btn active" data-nav="home">🏠<span>Ana</span></button>
+      <button class="nav-btn" data-nav="trade">🚀<span>Trade</span></button>
+      <button class="nav-btn" data-nav="strategies">🧠<span>Strateji</span></button>
+      <button class="nav-btn" data-nav="portfolio">💹<span>Portföy</span></button>
+      <button class="nav-btn" data-nav="settings">⚙️<span>Ayarlar</span></button>
+    </nav>
   </div>
 
   <div class="toast" id="toast"></div>
@@ -512,6 +557,11 @@
       return payload.data;
     }
 
+    function money(value) {
+      const n = Number(value || 0);
+      return `${n < 0 ? '-' : ''}$${Math.abs(n).toFixed(2)}`;
+    }
+
     function escapeHtml(value) {
       return String(value ?? '')
         .replaceAll('&', '&amp;')
@@ -520,40 +570,43 @@
         .replaceAll('"', '&quot;');
     }
 
+    function setPage(page) {
+      document.querySelectorAll('.page').forEach((el) => {
+        el.classList.toggle('active', el.dataset.page === page);
+      });
+      document.querySelectorAll('.nav-btn').forEach((el) => {
+        el.classList.toggle('active', el.dataset.nav === page);
+      });
+    }
+
     function renderSnapshot(snapshot) {
       state.snapshot = snapshot;
       document.getElementById('status-box').textContent = snapshot.statusText;
       document.getElementById('stat-port').textContent = snapshot.config.dashboardPort;
       document.getElementById('stat-maxtrade').textContent = `$${snapshot.config.maxTradeUsd}`;
       document.getElementById('stat-strategies').textContent = `${snapshot.strategies.enabled}/${snapshot.strategies.total}`;
-      document.getElementById('stat-wallets').textContent = snapshot.wallets.length;
+      document.getElementById('stat-openpositions').textContent = snapshot.portfolio.summary.openPositions;
 
       renderStrategies(snapshot.strategies.strategies || []);
       renderWallets(snapshot.wallets || []);
       renderCategories(snapshot.categories || []);
       renderSignals(snapshot.recentSignals || []);
+      renderPortfolio(snapshot.portfolio || { summary: {}, positions: [] });
+      renderOrderHistory(snapshot.orderHistory || []);
     }
 
     function renderStrategies(strategies) {
       const root = document.getElementById('strategy-list');
-      if (!strategies.length) {
-        root.innerHTML = `<div class="item"><p class="muted">Strateji bulunamadı.</p></div>`;
-        return;
-      }
-
-      root.innerHTML = strategies.map((strategy) => `
+      root.innerHTML = strategies.length ? strategies.map((strategy) => `
         <div class="item">
           <div class="item-top">
             <div>
-              <strong>${escapeHtml(strategy.name)}</strong>
+              <div class="item-title">${escapeHtml(strategy.name)}</div>
               <div class="muted">${escapeHtml(strategy.description || '')}</div>
             </div>
-            <div class="chips">
-              <span class="chip ${strategy.enabled ? 'on' : 'off'}">${strategy.enabled ? 'AÇIK' : 'KAPALI'}</span>
-              <span class="chip">${escapeHtml(strategy.state)}</span>
-            </div>
+            <div class="chip ${strategy.enabled ? 'on' : ''}">${strategy.enabled ? 'AÇIK' : 'KAPALI'}</div>
           </div>
-          <div class="chips" style="margin-bottom:10px;">
+          <div class="row" style="margin: 8px 0 10px;">
             <span class="chip">${escapeHtml(strategy.id)}</span>
             <span class="chip">${escapeHtml(strategy.category || '-')}</span>
             <span class="chip ${strategy.automation === 'planned' ? 'warn' : ''}">${escapeHtml(strategy.automation || '-')}</span>
@@ -563,62 +616,97 @@
             <button class="btn-red" onclick="toggleStrategy('${escapeHtml(strategy.id)}', false)">Kapat</button>
           </div>
         </div>
-      `).join('');
+      `).join('') : `<div class="item"><p class="muted">Strateji bulunamadı.</p></div>`;
     }
 
     function renderWallets(wallets) {
       const root = document.getElementById('wallet-list');
-      if (!wallets.length) {
-        root.innerHTML = `<div class="item"><p class="muted">Takip edilen cüzdan yok.</p></div>`;
-        return;
-      }
-
-      root.innerHTML = wallets.map((wallet) => `
+      root.innerHTML = wallets.length ? wallets.map((wallet) => `
         <div class="item">
           <div class="item-top">
             <div class="mono">${escapeHtml(wallet)}</div>
             <button class="btn-red" onclick="removeWallet('${escapeHtml(wallet)}')">Sil</button>
           </div>
         </div>
-      `).join('');
+      `).join('') : `<div class="item"><p class="muted">Takip edilen cüzdan yok.</p></div>`;
     }
 
     function renderCategories(categories) {
       const root = document.getElementById('category-list');
-      if (!categories.length) {
-        root.innerHTML = `<div class="item"><p class="muted">Aktif kategori yok.</p></div>`;
-        return;
-      }
-
-      root.innerHTML = categories.map((category) => `
+      root.innerHTML = categories.length ? categories.map((category) => `
         <div class="item">
           <div class="item-top">
             <div>
-              <strong>${escapeHtml(category.category)}</strong>
+              <div class="item-title">${escapeHtml(category.category)}</div>
               <div class="muted">Minimum: $${escapeHtml(category.minAmountUsd)}</div>
             </div>
             <button class="btn-red" onclick="removeCategory('${escapeHtml(category.category)}')">Sil</button>
           </div>
         </div>
-      `).join('');
+      `).join('') : `<div class="item"><p class="muted">Aktif kategori yok.</p></div>`;
     }
 
     function renderSignals(signals) {
       const root = document.getElementById('signal-list');
-      if (!signals.length) {
-        root.innerHTML = `<div class="item"><p class="muted">Henüz sinyal yok.</p></div>`;
-        return;
-      }
-
-      root.innerHTML = signals.map((signal) => `
+      root.innerHTML = signals.length ? signals.map((signal) => `
         <div class="item">
           <div class="item-top">
-            <span class="signal-type">${escapeHtml(signal.type)}</span>
+            <span class="chip">${escapeHtml(signal.type)}</span>
             <span class="chip">${new Date(signal.timestamp).toLocaleTimeString('tr-TR')}</span>
           </div>
           <div class="mono">${escapeHtml(JSON.stringify(signal.payload, null, 2))}</div>
         </div>
-      `).join('');
+      `).join('') : `<div class="item"><p class="muted">Henüz sinyal yok.</p></div>`;
+    }
+
+    function renderPortfolio(portfolio) {
+      const summary = portfolio.summary || {};
+      document.getElementById('pnl-total').textContent = money(summary.totalPnl);
+      document.getElementById('pnl-realized').textContent = money(summary.realizedPnl);
+      document.getElementById('pnl-unrealized').textContent = money(summary.unrealizedPnl);
+      document.getElementById('pnl-current').textContent = money(summary.totalCurrentValue);
+      document.getElementById('portfolio-meta').textContent =
+        `Açık pozisyon: ${summary.openPositions || 0}\nKazanan: ${summary.winners || 0}\nKaybeden: ${summary.losers || 0}\nToplam size: ${(summary.totalSize || 0).toFixed(2)}${summary.error ? `\nHata: ${summary.error}` : ''}`;
+
+      const root = document.getElementById('positions-list');
+      const positions = portfolio.positions || [];
+      root.innerHTML = positions.length ? positions.map((position) => `
+        <div class="item">
+          <div class="item-top">
+            <div>
+              <div class="item-title">${escapeHtml(position.marketTitle)}</div>
+              <div class="muted">${escapeHtml(position.outcome || '')}</div>
+            </div>
+            <span class="chip ${Number(position.unrealizedPnl || 0) >= 0 ? 'on' : 'red'}">${money(position.unrealizedPnl)}</span>
+          </div>
+          <div class="row">
+            <span class="chip">Size: ${Number(position.size || 0).toFixed(2)}</span>
+            <span class="chip">Avg: ${money(position.avgPrice)}</span>
+            <span class="chip">Value: ${money(position.currentValue)}</span>
+          </div>
+        </div>
+      `).join('') : `<div class="item"><p class="muted">Açık pozisyon bulunamadı.</p></div>`;
+    }
+
+    function renderOrderHistory(history) {
+      const root = document.getElementById('order-history-list');
+      root.innerHTML = history.length ? history.slice(0, 20).map((order) => `
+        <div class="item">
+          <div class="item-top">
+            <div>
+              <div class="item-title">${escapeHtml(order.source || 'bot')} • ${escapeHtml(order.signalType || '-')}</div>
+              <div class="muted">${new Date(order.createdAt).toLocaleString('tr-TR')}</div>
+            </div>
+            <span class="chip ${order.status === 'filled' ? 'on' : 'red'}">${escapeHtml(order.status || '-')}</span>
+          </div>
+          <div class="row">
+            <span class="chip">Token: ${escapeHtml(order.tokenId || order.requestedTokenId || '-')}</span>
+            <span class="chip">USD: ${money(order.usdAmount)}</span>
+            <span class="chip">Size: ${Number(order.size || 0).toFixed(2)}</span>
+          </div>
+          ${order.error ? `<div class="muted" style="margin-top:8px;">Hata: ${escapeHtml(order.error)}</div>` : ''}
+        </div>
+      `).join('') : `<div class="item"><p class="muted">Kayıtlı order geçmişi yok.</p></div>`;
     }
 
     async function refreshDashboard(silent = false) {
@@ -626,9 +714,7 @@
         const data = await api('/api/dashboard');
         renderSnapshot(data);
       } catch (error) {
-        if (!silent) {
-          showToast(error.message);
-        }
+        if (!silent) showToast(error.message);
       }
     }
 
@@ -640,9 +726,7 @@
         });
         showToast(`Strategy ${enabled ? 'açıldı' : 'kapandı'}: ${id}`);
         refreshDashboard(true);
-      } catch (error) {
-        showToast(error.message);
-      }
+      } catch (error) { showToast(error.message); }
     }
 
     async function removeWallet(address) {
@@ -650,9 +734,7 @@
         await api(`/api/wallets?address=${encodeURIComponent(address)}`, { method: 'DELETE' });
         showToast('Cüzdan silindi.');
         refreshDashboard(true);
-      } catch (error) {
-        showToast(error.message);
-      }
+      } catch (error) { showToast(error.message); }
     }
 
     async function removeCategory(category) {
@@ -660,24 +742,21 @@
         await api(`/api/categories?category=${encodeURIComponent(category)}`, { method: 'DELETE' });
         showToast('Kategori silindi.');
         refreshDashboard(true);
-      } catch (error) {
-        showToast(error.message);
-      }
+      } catch (error) { showToast(error.message); }
     }
+
+    document.querySelectorAll('.nav-btn').forEach((button) => {
+      button.addEventListener('click', () => setPage(button.dataset.nav));
+    });
 
     document.getElementById('wallet-add-btn').addEventListener('click', async () => {
       const address = document.getElementById('wallet-input').value.trim();
       try {
-        await api('/api/wallets', {
-          method: 'POST',
-          body: JSON.stringify({ address }),
-        });
+        await api('/api/wallets', { method: 'POST', body: JSON.stringify({ address }) });
         document.getElementById('wallet-input').value = '';
         showToast('Cüzdan eklendi.');
         refreshDashboard(true);
-      } catch (error) {
-        showToast(error.message);
-      }
+      } catch (error) { showToast(error.message); }
     });
 
     document.getElementById('category-add-btn').addEventListener('click', async () => {
@@ -692,9 +771,7 @@
         document.getElementById('category-min').value = '';
         showToast(result.message || 'Kategori eklendi.');
         refreshDashboard(true);
-      } catch (error) {
-        showToast(error.message);
-      }
+      } catch (error) { showToast(error.message); }
     });
 
     document.getElementById('trade-btn').addEventListener('click', async () => {
@@ -708,35 +785,23 @@
         });
         showToast('İşlem gönderildi.');
         refreshDashboard(true);
-      } catch (error) {
-        showToast(error.message);
-      }
+      } catch (error) { showToast(error.message); }
     });
 
     document.getElementById('autobet-on').addEventListener('click', async () => {
       try {
-        await api('/api/autobet', {
-          method: 'POST',
-          body: JSON.stringify({ enabled: true }),
-        });
+        await api('/api/autobet', { method: 'POST', body: JSON.stringify({ enabled: true }) });
         showToast('Oto-bet açıldı.');
         refreshDashboard(true);
-      } catch (error) {
-        showToast(error.message);
-      }
+      } catch (error) { showToast(error.message); }
     });
 
     document.getElementById('autobet-off').addEventListener('click', async () => {
       try {
-        await api('/api/autobet', {
-          method: 'POST',
-          body: JSON.stringify({ enabled: false }),
-        });
+        await api('/api/autobet', { method: 'POST', body: JSON.stringify({ enabled: false }) });
         showToast('Oto-bet kapandı.');
         refreshDashboard(true);
-      } catch (error) {
-        showToast(error.message);
-      }
+      } catch (error) { showToast(error.message); }
     });
 
     document.getElementById('redeem-btn').addEventListener('click', async () => {
@@ -744,9 +809,7 @@
         const result = await api('/api/redeem', { method: 'POST' });
         showToast(`Redeem tamamlandı. Market sayısı: ${result.length}`);
         refreshDashboard(true);
-      } catch (error) {
-        showToast(error.message);
-      }
+      } catch (error) { showToast(error.message); }
     });
 
     document.getElementById('test-btn').addEventListener('click', async () => {
@@ -754,9 +817,7 @@
         await api('/api/test', { method: 'POST' });
         showToast('Test sinyali çalıştırıldı.');
         refreshDashboard(true);
-      } catch (error) {
-        showToast(error.message);
-      }
+      } catch (error) { showToast(error.message); }
     });
 
     document.getElementById('search-btn').addEventListener('click', async () => {
@@ -765,23 +826,18 @@
       root.innerHTML = `<div class="item"><p class="muted">Aranıyor...</p></div>`;
       try {
         const results = await api(`/api/search?q=${encodeURIComponent(query)}`);
-        if (!results.length) {
-          root.innerHTML = `<div class="item"><p class="muted">Sonuç bulunamadı.</p></div>`;
-          return;
-        }
-
-        root.innerHTML = results.slice(0, 8).map((market) => `
+        root.innerHTML = results.length ? results.slice(0, 8).map((market) => `
           <div class="item">
             <div class="item-top">
-              <strong>${escapeHtml(market.question)}</strong>
+              <div class="item-title">${escapeHtml(market.question)}</div>
               <span class="chip">${market.outcomePrices?.[0] ? `${(parseFloat(market.outcomePrices[0]) * 100).toFixed(1)}%` : 'N/A'}</span>
             </div>
             <div class="mono">${escapeHtml(market.clobTokenIds?.[0] || '')}</div>
-            <div class="row" style="margin-top:10px;">
+            <div class="row" style="margin-top: 10px;">
               <button class="btn-green" onclick="fillTrade('${escapeHtml(market.clobTokenIds?.[0] || '')}')">Trade Formuna Doldur</button>
             </div>
           </div>
-        `).join('');
+        `).join('') : `<div class="item"><p class="muted">Sonuç bulunamadı.</p></div>`;
       } catch (error) {
         root.innerHTML = `<div class="item"><p class="muted">${escapeHtml(error.message)}</p></div>`;
       }
@@ -789,6 +845,7 @@
 
     function fillTrade(tokenId) {
       document.getElementById('trade-token').value = tokenId;
+      setPage('trade');
       showToast('Token trade formuna dolduruldu.');
     }
 
